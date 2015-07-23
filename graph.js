@@ -1,7 +1,19 @@
 console.log("javascript started")
 
-var graph = new dagre.graphlib.Graph();
-graph.setGraph({});
+// add svg for working out dimensions necessary for rendering labels' text
+var hiddenSvg = d3.select("body").append("svg:svg")
+var svgText   = hiddenSvg.append("svg:text")
+                         .attr("y", -500)
+                         .attr("x", -500)
+                         .style("font-size", "14px")
+
+
+var globalGraph = new dagre.graphlib.Graph(); globalGraph.setGraph({});
+
+function calcBBox(text) {
+  svgText.text(text);
+  return svgText.node().getBBox();
+}
 
 function getNodes(callback){
   console.log('loading nodes')
@@ -10,12 +22,12 @@ function getNodes(callback){
     else {
       console.log("input nodes: "); console.dir (inputNodes)
       inputNodes.forEach(function(node) {
-        // TODO: get bounding box size required for rendering the label 
-        graph.setNode(node.id, { name: node.name, kind: node.kind, width:10, height:10 })
+        bbox = calcBBox(node.name)
+        globalGraph.setNode(node.id, { name: node.name, kind: node.kind, width:bbox.width, height:bbox.height })
       })
-      console.log("nodes: "); console.dir(graph.nodes())
+      console.log("nodes: "); console.dir(globalGraph.nodes())
       
-      console.log('loading sources, this may take a while'); getSources(callback)
+      console.log('loading sources, this may take a while...'); getSources(callback)
     }
   })
 }
@@ -28,12 +40,12 @@ function getEdges(callback){
       console.log("input edges: "); console.dir(inputEdges)
       inputEdges.forEach(function(edge) {
         // TODO: get bounding box size required for rendering the label 
-        graph.setEdge(edge.id1, edge.id2, { edgeKind: edge.edgeKind });
+        globalGraph.setEdge(edge.id1, edge.id2, { edgeKind: edge.edgeKind });
       })
-      console.log("edges: "); console.dir(graph.edges())
+      console.log("edges: "); console.dir(globalGraph.edges())
 
       inputEdges.forEach(function(edge) {
-        if (graph.edge({v:edge.id1, w:edge.id2}) === undefined)
+        if (globalGraph.edge({v:edge.id1, w:edge.id2}) === undefined)
           console.warn("input edge " + edge  + " failed to initialize as a graphlib edge")
       })
 
@@ -46,9 +58,9 @@ sourceMap = {}
 
 // recursively fetch source for all nodes, synchronously
 function getSources(callback, i) {
-  i = i+1 || 0; if (i == graph.nodes().length) callback()
+  i = i+1 || 0; if (i == globalGraph.nodes().length) callback()
   else {
-    id = graph.nodes()[i]
+    id = globalGraph.nodes()[i]
     d3.text('cae-data/' + 'node-source-' + id, function(err, nodeSource) {
       if (err) console.error(err)
       else {
@@ -60,7 +72,7 @@ function getSources(callback, i) {
 }
 
 function verifyDataLoad(callback) {
-  if (Object.keys(sourceMap).length != graph.nodes().length)
+  if (Object.keys(sourceMap).length != globalGraph.nodes().length)
     console.warn('number of sources does not equal the number of nodes')
   else 
     console.log('data loading done')
@@ -71,8 +83,47 @@ function fetchData(callback) {
   getNodes(function(){getEdges(verifyDataLoad)})
 }
 
-
 fetchData()
+
+function getNodesByName(searchNodeName) {
+  found = globalGraph.nodes().filter(function(id) {
+    return globalGraph.node(id).name == searchNodeName
+  })
+  found.forEach(function(id) {
+    console.log(globalGraph.node(id))
+  })
+  return found
+}
+
+function getNodeEnvGraph(id) {
+
+  var displayGraph = new dagre.graphlib.Graph(); displayGraph.setGraph({});
+  
+  displayGraph.setNode(id, globalGraph.node(id)) // copy central node from global graph
+
+  nodeEdges = globalGraph.nodeEdges(id); console.log(nodeEdges)
+
+  nodeEdges.forEach(function(edge) {
+    displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+    displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
+    displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
+  })
+
+  console.log(displayGraph)
+}
+
+
+// easy testing function - temporary
+function getFirstResultEnv(searchNodeName) {
+  firstResult = getNodesByName(searchNodeName)[0]
+  if (firstResult === undefined) return false
+
+  getNodeEnvGraph(firstResult)
+}
+
+//getFirstResultEnv("signature")
+
+
 
 //dagre.layout(g);
 
@@ -89,8 +140,10 @@ g.edges().forEach(function(e) {
 });
 */
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 // validate the input data
-if (graph.nodes().filter(
+if (globalGraph.nodes().filter(
   function(node) {
   return g.node(node) === undefined
 }).length > 0)
@@ -117,6 +170,11 @@ function nodeEdgesByEdgeKind(nodeID, edgeKind) {
       })
 }
 
-function parentChain(nodeID) {
-  
-}
+function parentChain(nodeID) {}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// can use non SVG maybe https://developer.mozilla.org/en/docs/Web/API/Element/getBoundingClientRect
+// but with SVG it is simple to draw invisibly outside the page
+
+
