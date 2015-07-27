@@ -1,18 +1,28 @@
 console.log('javascript started')
 
+var width = document.body.clientWidth
+var height = document.body.scrollHeight
+
+console.log('viewport dimensions: ' + width + ', ' + height)
+
 // create svg for working out dimensions necessary for rendering labels' text
-var hiddenSvg = d3.select('body').append('svg:svg')
-var svgText   = hiddenSvg.append('svg:text')
+var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('height', 0)
+var SVGText   = hiddenSVG.append('svg:text')
                          .attr('y', -500)
                          .attr('x', -500)
                          .style('font-size', '14px')
 
+var presentationSVGWidth = width
+var presentationSVGHeight = height - 100
+var presentationSVG = d3.select('body').append('svg:svg')
+                                         .attr('width', presentationSVGWidth)
+                                         .attr('height', presentationSVGHeight)
 
 var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
 function calcBBox(text) {
-  svgText.text(text);
-  return svgText.node().getBBox();
+  SVGText.text(text);
+  return SVGText.node().getBBox();
 }
 
 function getNodes(callback){
@@ -27,7 +37,11 @@ function getNodes(callback){
       })
       console.log('nodes: '); console.dir(globalGraph.nodes())
       
-      console.log('loading sources, this may take a while...'); getSources(callback)
+      console.log('loading sources, this may take a while...'); 
+      
+      console.log('skipping preemptive source loading')
+      callback()
+      //getSources(callback)
     }
   })
 }
@@ -86,11 +100,9 @@ function getSources(callback, i) {
 function verifyDataLoad(callback) {
   if (Object.keys(sourceMap).length != globalGraph.nodes().length)
     console.warn('number of sources does not equal the number of nodes')
-  else 
-  {
-    console.log('data loading done')
-    initAwesomplete()
-  }
+
+  console.log('data loading done')
+  initAwesomplete()
 }
 
 function fetchData(callback) {
@@ -129,7 +141,9 @@ function getNodeEnvGraph(id, degree) {
   // for any humbly large degree, this needs to be implemented for efficient Big O(V,E),
   // as the current one is very naive in that sense.
 
-  var displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
+  console.log(id)
+
+  displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
   
   displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
 
@@ -146,13 +160,21 @@ function getNodeEnvGraph(id, degree) {
   }
 
   addNodeNeighbors(id, degree)
-
   console.log(displayGraph)
   return displayGraph
 }
 
-function fireGraphDisplay() {
-  getNodeEnvGraph(95325,2)
+function fireGraphDisplay(nodeId) {
+  //var displayGraph = getNodeEnvGraph(nodeId,1)
+  getNodeEnvGraph(nodeId,1)
+  displayGraph.setGraph({})
+  dagre.layout(displayGraph)
+
+  console.log(displayGraph)
+  console.log('layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
+  console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
+  console.log('layout computed')
+  d3Render(displayGraph)
 }
 
 function initAwesomplete() {
@@ -173,25 +195,35 @@ function initAwesomplete() {
     list: nodes,
     item: function (node, input) { 
             let suggestedElem = document.createElement('li')
-            suggestedElem.appendChild(document.createTextNode(node.data.name + ' ' + '(' + node.id + ')'))
+            suggestedElem.appendChild(document.createTextNode(node.data.kind + ' ' + node.data.name + ' ' + '(' + node.id + ')'))
             return suggestedElem
           },
     filter: function (node, input) {
               return node.data.name.toLowerCase().indexOf(input.toLowerCase()) > -1 
             },
     sort: function compare(a, b) {
-      if (a.data.name < b.data.name) return -1
-      if (a.data.name > b.data.name) return 1
-      return 0
+            if (a.data.name < b.data.name) return -1
+            if (a.data.name > b.data.name) return 1
+            return 0
+          },
+    replace: function(text) {
+      var id = text.substring(text.indexOf('(') + 1, text.indexOf(')'))
+      var node = globalGraph.node(id)
+
+      console.log('user selected ' + text)
+      fireGraphDisplay(id)
+
+      this.input.value = text
     }
   })
 
   window.addEventListener("awesomplete-selectcomplete", function(e) {
     // User made a selection from dropdown. 
     // This is fired after the selection is applied
-    var selection = inputBar.value // see https://github.com/LeaVerou/awesomplete/issues/16438
-    fireGraphDisplay(selection)
   }, false)
+
+  //getFirstResultEnv('signature')
+  //fireGraphDisplay(35478)
 
 }
 
@@ -202,6 +234,94 @@ function getFirstResultEnv(searchNodeName) {
   console.log(firstResult)
   getNodeEnvGraph(firstResult, 1)
 }
+
+function d3Render(displayGraph) {
+
+  function graphlibTod3(displayGraph) {
+    //
+    // transform the input graph to a d3 input graph as per the format:
+    //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
+    //   https://github.com/mbostock/d3/wiki/Force-Layout#links
+    //
+    nodeIdIndex = {}
+    var nodesJson = displayGraph.nodes().map(function(id, index) {
+        nodeIdIndex[id] = index
+
+        // set the initial location via px, py
+        d3Node = displayGraph.node(id)
+        console.log(d3Node)
+        d3Node['px'] = displayGraph.node(id).x
+        d3Node['py'] = displayGraph.node(id).y
+        return d3Node
+      })
+    console.log(nodeIdIndex)  
+    console.log(nodesJson)  
+
+    var linksJson = displayGraph.edges().map(function(edge) {
+      return { source: nodeIdIndex[edge.v], 
+               target: nodeIdIndex[edge.w] }
+    })
+
+    console.log(displayGraph.edges())
+    console.log(linksJson)
+    return { nodesJson, linksJson }
+  }
+
+  var data = graphlibTod3(displayGraph)
+
+  // d3 force simulation layout
+  var forceLayout = d3.layout.force()
+                               .linkDistance(20)
+                               .charge(-30)
+                               .gravity(.1)
+                               .size([presentationSVGWidth, presentationSVGHeight])
+                               //.on("tick", tickHandler);
+
+  var links = presentationSVG.selectAll(".link")
+      .data(data.linksJson)
+      .enter().append("line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+  var nodes = presentationSVG.selectAll(".node")
+      .data(data.nodesJson)
+      .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", 5)
+      .style("fill", function(d) { return 'blue' })
+      .call(forceLayout.drag);
+
+  nodes.append("title")
+      .text(function(d) { return d.name; });
+
+  forceLayout.nodes(data.nodesJson)
+             .links(data.linksJson)
+             .start()
+
+  forceLayout.on("tick", function() {
+    links.attr("x1", function(d) { return d.source.x; })
+         .attr("y1", function(d) { return d.source.y; })
+         .attr("x2", function(d) { return d.target.x; })
+         .attr("y2", function(d) { return d.target.y; });
+
+    nodes.attr("cx", function(d) { return d.x; })
+         .attr("cy", function(d) { return d.y; });
+  });             
+
+//
+// when the force simulation is running, synchronizes the location
+// of the d3 managed svg elements to the current simulation values
+//
+  function tickHandler() {
+    links.attr("x1", function(d) { return d.source.x; })
+         .attr("y1", function(d) { return d.source.y; })
+         .attr("x2", function(d) { return d.target.x; })
+         .attr("y2", function(d) { return d.target.y; });
+
+    nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+  }
+}
+
 
 //getFirstResultEnv('signature')
 
@@ -262,3 +382,4 @@ function parentChain(nodeID) {}
 globalGraph.edges().forEach(function(edge){
   if (globalGraph.edge(edge.v, edge.w).edgeKind == 'owned by') console.log('bad')
 })
+
