@@ -166,7 +166,7 @@ function getNodeEnvGraph(id, degree) {
 
 function fireGraphDisplay(nodeId) {
   //var displayGraph = getNodeEnvGraph(nodeId,1)
-  getNodeEnvGraph(nodeId,1)
+  getNodeEnvGraph(nodeId,3)
   displayGraph.setGraph({})
   dagre.layout(displayGraph)
 
@@ -277,22 +277,32 @@ function d3Render(displayGraph) {
                                .size([presentationSVGWidth, presentationSVGHeight])
                                //.on("tick", tickHandler);
 
-  var links = presentationSVG.selectAll(".link")
+  var links = 
+    presentationSVG.selectAll(".link")
       .data(data.linksJson)
       .enter().append("line")
       .attr("class", "link")
       .style("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-  var nodes = presentationSVG.selectAll(".node")
+  var nodes = 
+    presentationSVG.selectAll(".node")
       .data(data.nodesJson)
       .enter().append("circle")
       .attr("class", "node")
       .attr("r", 5)
-      .style("fill", function(d) { return 'blue' })
+      .style("fill", function(node) { 
+        if (node.kind == 'trait') return d3.rgb('blue').darker(2)
+        if (node.kind == 'class') return d3.rgb('blue').brighter(1)
+        if (node.kind == 'object') return d3.rgb('blue').brighter(1.6)
+        if (node.kind == 'anonymous class') return d3.rgb('gray')
+        if (node.kind == 'method') return d3.rgb('green')
+        if (node.kind == 'value') return d3.rgb('green').brighter(1.3)
+        if (node.kind == 'package') return d3.rgb('blue').darker(3)
+      })
       .call(forceLayout.drag);
 
   nodes.append("title")
-      .text(function(d) { return d.name; });
+      .text(function(d) { return d.kind + ' ' + d.name; });
 
   forceLayout.nodes(data.nodesJson)
              .links(data.linksJson)
