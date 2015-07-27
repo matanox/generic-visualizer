@@ -89,7 +89,7 @@ function verifyDataLoad(callback) {
   else 
   {
     console.log('data loading done')
-    test()
+    initAwesomplete()
   }
 }
 
@@ -110,50 +110,97 @@ function getNodesByName(searchNodeName) {
   return found
 }
 
-function getNodeEnvGraph(id) {
+ownershipChainMap = {}
+function getNodeOnwershipChain(id) {
+  'use strict'
+  let node = globalGraph.node(id)
+  globalGraph.nodeEdges(id).forEach(function(edge) {
+    if (edge.w == id && globalGraph.edge(edge).edgeKind == 'declares member') {
+      let owner = edge.v
+      console.log('owner: '); console.log(globalGraph.node(owner))
+      getNodeOnwershipChain(owner)
+    }
+  })
+}
+
+function getNodeEnvGraph(id, degree) {
+
+  // this is a naive implementation meant for very small values of degree.
+  // for any humbly large degree, this needs to be implemented for efficient Big O(V,E),
+  // as the current one is very naive in that sense.
 
   var displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
   
-  displayGraph.setNode(id, globalGraph.node(id)) // copy central node from global graph
+  displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
 
-  nodeEdges = globalGraph.nodeEdges(id); console.log(nodeEdges)
+  function addNodeNeighbors(id, degree) {
+    if (degree == 0) return   
+    globalGraph.nodeEdges(id).forEach(function(edge) {
+      displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+      displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
+      displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
 
-  nodeEdges.forEach(function(edge) {
-    displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
-    displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
-    displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
-  })
+      if (edge.v != id) addNodeNeighbors(edge.v, degree - 1)
+      if (edge.w != id) addNodeNeighbors(edge.w, degree - 1)
+    })
+  }
+
+  addNodeNeighbors(id, degree)
 
   console.log(displayGraph)
+  return displayGraph
 }
 
+function fireGraphDisplay() {
+  getNodeEnvGraph(95325,2)
+}
 
-function test() {
+function initAwesomplete() {
   'use strict'
-  getFirstResultEnv("signature")
-  let nodeNames = globalGraph.nodes().map(function(id) {
-    let node = globalGraph.node(id)
-    return node.name + ' ' + '(' + id + ')'
+  //getFirstResultEnv("signature")
+  
+  let nodes = globalGraph.nodes().map(function(id) {
+    let node = { id: id, 
+                 data: globalGraph.node(id) }
+    //return node.name + ' ' + '(' + id + ')'
+    return node
   })
+
   var inputBar = document.getElementById('inputBar')
   new Awesomplete(inputBar, {
     minChars: 1,
     maxItems: 100,
-    list: nodeNames,
-    item: function item(suggestedText, input) { 
-            let suggested = document.createElement('li')
-            suggested.appendChild(document.createTextNode(suggestedText))
-            return suggested
-          }
+    list: nodes,
+    item: function (node, input) { 
+            let suggestedElem = document.createElement('li')
+            suggestedElem.appendChild(document.createTextNode(node.data.name + ' ' + '(' + node.id + ')'))
+            return suggestedElem
+          },
+    filter: function (node, input) {
+              return node.data.name.toLowerCase().indexOf(input.toLowerCase()) > -1 
+            },
+    sort: function compare(a, b) {
+      if (a.data.name < b.data.name) return -1
+      if (a.data.name > b.data.name) return 1
+      return 0
+    }
   })
+
+  window.addEventListener("awesomplete-selectcomplete", function(e) {
+    // User made a selection from dropdown. 
+    // This is fired after the selection is applied
+    var selection = inputBar.value // see https://github.com/LeaVerou/awesomplete/issues/16438
+    fireGraphDisplay(selection)
+  }, false)
+
 }
 
-// easy testing function - temporary
+// temporary testing function
 function getFirstResultEnv(searchNodeName) {
   firstResult = getNodesByName(searchNodeName)[0]
   if (firstResult === undefined) return false
-
-  getNodeEnvGraph(firstResult)
+  console.log(firstResult)
+  getNodeEnvGraph(firstResult, 1)
 }
 
 //getFirstResultEnv('signature')
