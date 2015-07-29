@@ -81,7 +81,6 @@ function getEdges(callback){
 }
 
 sourceMap = {}
-
 // recursively fetch source for all nodes, synchronously
 function getSources(callback, i) {
   i = i+1 || 0; if (i == globalGraph.nodes().length) callback()
@@ -102,7 +101,81 @@ function verifyDataLoad(callback) {
     console.warn('number of sources does not equal the number of nodes')
 
   console.log('data loading done')
+  applyGraphFilter()
+  console.log('data filters applied')
   initAwesomplete()
+}
+
+// recursive removal of nodes owned by a given node, 
+// along with the ownership edges connecting them
+function removeOwned(nodeId, graph) {
+  for (edge of graph.nodeEdges(nodeId)) {
+    if (edge.w != nodeId) // avoid infinitely going back to parent every time
+      if (graph.edge(edge).edgeKind == 'declares member') {
+        var owned = edge.w
+        console.log('removing ' + owned)
+        removeOwned(owned, graph)
+        graph.removeNode(owned)
+        graph.removeEdge(edge)
+      }
+  }
+}
+
+packageExcludeList = [
+  { 
+    description: 'scala core',
+    chain: ['scala'] 
+  },
+  { 
+    description: 'java core',
+    chain: ['java', 'lang'] 
+  }
+]
+
+function filterByChain(chain, graph) {
+
+  function trim(nodeId) {
+    console.log('trimming ownership chain starting at: ' + chain.join('.') + ' (' + nodeId + ')')
+    removeOwned(nodeId, graph)
+  }
+  
+  function findUniqueByName(nodeName) {
+    var nodeIds = getNodesByName(nodeName, graph)
+    if (nodeIds.length != 1) {
+      console.warn ('could not uniquely identify requested node, ' + nodeName + ' : ' + nodeName.length + ' root nodes found, whereas only one is expected!')
+      return undefined
+    }
+
+    return nodeIds[0]
+  }
+
+  var nodeId = findUniqueByName('<root>')
+  if (nodeId === undefined) return false
+ 
+  var match = true
+  for (var chainPos = 0; chainPos < chain.length && match == true; chainPos++) {
+    chainNodeName = chain[chainPos]
+    match = false
+    for (edge of graph.nodeEdges(nodeId)) {
+      if (graph.edge(edge).edgeKind == 'declares member') {
+        nodeId = edge.w
+        if (graph.node(nodeId).name == chainNodeName) {
+          match = true
+          break
+        }
+      }
+    }
+  }
+
+  if (match == true)
+    trim(nodeId)
+}
+
+function applyGraphFilter() {
+  for (exclusion of packageExcludeList) {
+
+    filterByChain(exclusion.chain, globalGraph)
+  }
 }
 
 function fetchData(callback) {
@@ -110,29 +183,32 @@ function fetchData(callback) {
   getNodes(function(){getEdges(verifyDataLoad)})
 }
 
-fetchData()
+fetchData() 
 
-function getNodesByName(searchNodeName) {
-  found = globalGraph.nodes().filter(function(id) {
-    return globalGraph.node(id).name == searchNodeName
-  })
-  found.forEach(function(id) {
-    console.log(globalGraph.node(id))
+function getNodesByName(searchNodeName, graph) {
+  var found = graph.nodes().filter(function(id) {
+    return graph.node(id).name == searchNodeName
   })
   return found
 }
 
-ownershipChainMap = {}
-function getNodeOnwershipChain(id) {
-  'use strict'
-  let node = globalGraph.node(id)
-  globalGraph.nodeEdges(id).forEach(function(edge) {
-    if (edge.w == id && globalGraph.edge(edge).edgeKind == 'declares member') {
-      let owner = edge.v
-      console.log('owner: '); console.log(globalGraph.node(owner))
-      getNodeOnwershipChain(owner)
-    }
-  })
+function getOnwershipChain(id) {
+
+  var chain = []
+  function getNodeOwnershipChain(id) {
+    // look for ownership edges    
+    globalGraph.nodeEdges(id).forEach(function(edge) { 
+      if (globalGraph.edge(edge).edgeKind == 'declares member') {
+        if (edge.w == id) {
+          var owner = edge.v
+          chain.push(owner)
+          getNodeOwnershipChain(owner)
+        }
+      }
+    })
+  }
+
+  getNodeOwnershipChain(id)
 }
 
 function getNodeEnvGraph(id, degree) {
@@ -150,6 +226,10 @@ function getNodeEnvGraph(id, degree) {
   function addNodeNeighbors(id, degree) {
     if (degree == 0) return   
     globalGraph.nodeEdges(id).forEach(function(edge) {
+
+      //testNodeOnwershipChain(edge.v)
+      //testNodeOnwershipChain(edge.w)
+
       displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
       displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
       displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
@@ -166,7 +246,7 @@ function getNodeEnvGraph(id, degree) {
 
 function fireGraphDisplay(nodeId) {
   //var displayGraph = getNodeEnvGraph(nodeId,1)
-  getNodeEnvGraph(nodeId,3)
+  var displayGraph = getNodeEnvGraph(nodeId,2)
   displayGraph.setGraph({})
   dagre.layout(displayGraph)
 
@@ -199,7 +279,8 @@ function initAwesomplete() {
             return suggestedElem
           },
     filter: function (node, input) {
-              return node.data.name.toLowerCase().indexOf(input.toLowerCase()) > -1 
+              return node.data.name.toLowerCase().indexOf(input.toLowerCase()) > -1 ||
+                     node.id === input 
             },
     sort: function compare(a, b) {
             if (a.data.name < b.data.name) return -1
@@ -249,21 +330,21 @@ function d3Render(displayGraph) {
 
         // set the initial location via px, py
         d3Node = displayGraph.node(id)
-        console.log(d3Node)
+        //console.log(d3Node)
         d3Node['px'] = displayGraph.node(id).x
         d3Node['py'] = displayGraph.node(id).y
         return d3Node
       })
-    console.log(nodeIdIndex)  
-    console.log(nodesJson)  
+    //console.log(nodeIdIndex)  
+    //console.log(nodesJson)  
 
     var linksJson = displayGraph.edges().map(function(edge) {
       return { source: nodeIdIndex[edge.v], 
                target: nodeIdIndex[edge.w] }
     })
 
-    console.log(displayGraph.edges())
-    console.log(linksJson)
+    //console.log(displayGraph.edges())
+    //console.log(linksJson)
     return { nodesJson, linksJson }
   }
 
@@ -291,13 +372,13 @@ function d3Render(displayGraph) {
       .attr("class", "node")
       .attr("r", 5)
       .style("fill", function(node) { 
-        if (node.kind == 'trait') return d3.rgb('blue').darker(2)
-        if (node.kind == 'class') return d3.rgb('blue').brighter(1)
-        if (node.kind == 'object') return d3.rgb('blue').brighter(1.6)
+        if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
+        if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
+        if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
         if (node.kind == 'anonymous class') return d3.rgb('gray')
-        if (node.kind == 'method') return d3.rgb('green')
-        if (node.kind == 'value') return d3.rgb('green').brighter(1.3)
-        if (node.kind == 'package') return d3.rgb('blue').darker(3)
+        if (node.kind == 'method')          return d3.rgb('green')
+        if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
+        if (node.kind == 'package')         return d3.rgb('blue').darker(3)
       })
       .call(forceLayout.drag);
 
@@ -393,3 +474,17 @@ globalGraph.edges().forEach(function(edge){
   if (globalGraph.edge(edge.v, edge.w).edgeKind == 'owned by') console.log('bad')
 })
 
+
+
+ownershipChainMap = {}
+function getNodeOnwershipChain(id) {
+  'use strict'
+  let node = globalGraph.node(id)
+  globalGraph.nodeEdges(id).forEach(function(edge) {
+    if (edge.w == id && globalGraph.edge(edge).edgeKind == 'declares member') {
+      let owner = edge.v
+      console.log('owner: '); console.log(globalGraph.node(owner))
+      getNodeOnwershipChain(owner)
+    }
+  })
+}
