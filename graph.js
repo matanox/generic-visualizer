@@ -353,7 +353,7 @@ function d3Render(displayGraph) {
   // d3 force simulation layout
   var forceLayout = d3.layout.force()
                                .linkDistance(20)
-                               .charge(-30)
+                               .charge(-50)
                                .gravity(.1)
                                .size([presentationSVGWidth, presentationSVGHeight])
                                //.on("tick", tickHandler);
@@ -370,15 +370,19 @@ function d3Render(displayGraph) {
       .data(data.nodesJson)
       .enter().append("circle")
       .attr("class", "node")
-      .attr("r", 5)
+      .attr("r", 10)
       .style("fill", function(node) { 
         if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
         if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
         if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
         if (node.kind == 'anonymous class') return d3.rgb('gray')
-        if (node.kind == 'method')          return d3.rgb('green')
+        if (node.kind == 'method')          
+          if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.3)
+          else                              return d3.rgb('green')
         if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
         if (node.kind == 'package')         return d3.rgb('blue').darker(3)
+
+        
       })
       .call(forceLayout.drag);
 
