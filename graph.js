@@ -101,7 +101,9 @@ function verifyDataLoad(callback) {
     console.warn('number of sources does not equal the number of nodes')
 
   console.log('data loading done')
+
   applyGraphFilter()
+
   console.log('data filters applied')
   initAwesomplete()
   fireGraphDisplay(8464)
@@ -173,10 +175,19 @@ function filterByChain(chain, graph) {
 }
 
 function applyGraphFilter() {
+  nodesBefore = globalGraph.nodes().length
+  edgesBefore = globalGraph.edges().length
+  
   for (exclusion of packageExcludeList) {
-
     filterByChain(exclusion.chain, globalGraph)
   }
+
+  nodesAfter = globalGraph.nodes().length
+  edgesAfter = globalGraph.edges().length
+
+  console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') + 
+              ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' + 
+               parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
 }
 
 function fetchData(callback) {
@@ -329,19 +340,19 @@ function d3Render(displayGraph) {
     var nodesJson = displayGraph.nodes().map(function(id, index) {
         nodeIdIndex[id] = index
 
-        // set the initial location via px, py
         d3Node = displayGraph.node(id)
-        //console.log(d3Node)
+        d3Node['id'] = id // add back the id
+        //console.log(d3Node[id.toString()])
+        // set the initial location via px, py
         d3Node['px'] = displayGraph.node(id).x
         d3Node['py'] = displayGraph.node(id).y
         return d3Node
       })
-    //console.log(nodeIdIndex)  
-    //console.log(nodesJson)  
 
     var linksJson = displayGraph.edges().map(function(edge) {
       return { source: nodeIdIndex[edge.v], 
-               target: nodeIdIndex[edge.w] }
+               target: nodeIdIndex[edge.w],
+               edgeKind: displayGraph.edge(edge).edgeKind }
     })
 
     //console.log(displayGraph.edges())
@@ -364,26 +375,29 @@ function d3Render(displayGraph) {
       .data(data.linksJson)
       .enter().append("line")
       .attr("class", "link")
-      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+      .style("stroke-width", 1)
+      .style("stroke", function(edge) { 
+        if (edge.edgeKind == 'declares member') return d3.rgb('white').darker(2)
+        if (edge.edgeKind == 'extends')         return d3.rgb('blue')
+        if (edge.edgeKind == 'uses')            return d3.rgb('green')
+      })
 
   var nodes = 
     presentationSVG.selectAll(".node")
       .data(data.nodesJson)
       .enter().append("circle")
       .attr("class", "node")
-      .attr("r", 10)
+      .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 200) })
       .style("fill", function(node) { 
         if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
         if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
         if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
-        if (node.kind == 'anonymous class') return d3.rgb('gray')
+        if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
         if (node.kind == 'method')          
-          if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.3)
+          if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
           else                              return d3.rgb('green')
         if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
-        if (node.kind == 'package')         return d3.rgb('blue').darker(3)
-
-        
+        if (node.kind == 'package')         return d3.rgb('white').darker(2)
       })
       .call(forceLayout.drag);
 
