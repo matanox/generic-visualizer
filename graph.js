@@ -354,8 +354,8 @@ function d3Render(displayGraph) {
   // d3 force simulation layout
   var forceLayout = d3.layout.force()
                                .linkDistance(20)
-                               .charge(-50)
-                               .gravity(0.1)
+                               .charge(-150)
+                               .gravity(0.5)
                                .size([presentationSVGWidth, presentationSVGHeight])
                                //.on("tick", tickHandler);
 
@@ -398,31 +398,34 @@ function d3Render(displayGraph) {
 
     var outOfBound = false
 
-    function isWithinBounds() {
-
+    function keepWithinDisplayBounds() {
+      nodes.each(function(d){
+        radius = parseInt(d3.select(this).attr('r'))
+        if (d.x < radius) d.x = radius
+        if (d.y < radius) d.y = radius
+        if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
+        if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
+      })
     }
 
-    nodes.each(function(d){
-      radius = parseInt(d3.select(this).attr('r'))
-      if (d.x < radius) d.x = radius
-      if (d.y < radius) d.y = radius
-      if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
-      if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
-    })
+    function udpateView() {
+      //
+      // when the force simulation is running, synchronizes the location
+      // of the d3 managed svg elements to the current simulation values
+      //
+      links.attr("x1", function(d) { return d.source.x; })
+           .attr("y1", function(d) { return d.source.y; })
+           .attr("x2", function(d) { return d.target.x; })
+           .attr("y2", function(d) { return d.target.y; })
 
-    //
-    // when the force simulation is running, synchronizes the location
-    // of the d3 managed svg elements to the current simulation values
-    //
-    links.attr("x1", function(d) { return d.source.x; })
-         .attr("y1", function(d) { return d.source.y; })
-         .attr("x2", function(d) { return d.target.x; })
-         .attr("y2", function(d) { return d.target.y; })
+      nodes.attr("cx", function(d) { return d.x; })
+           .attr("cy", function(d) { return d.y; })
 
-    nodes.attr("cx", function(d) { return d.x; })
-         .attr("cy", function(d) { return d.y; })
+      //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+    }
 
-    //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+    keepWithinDisplayBounds()
+    udpateView()
   })
 
   forceLayout.on("end", function() {
