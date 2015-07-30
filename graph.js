@@ -104,6 +104,7 @@ function verifyDataLoad(callback) {
   applyGraphFilter()
   console.log('data filters applied')
   initAwesomplete()
+  fireGraphDisplay(8464)
 }
 
 // recursive removal of nodes owned by a given node, 
@@ -354,7 +355,7 @@ function d3Render(displayGraph) {
   var forceLayout = d3.layout.force()
                                .linkDistance(20)
                                .charge(-50)
-                               .gravity(.1)
+                               .gravity(0.1)
                                .size([presentationSVGWidth, presentationSVGHeight])
                                //.on("tick", tickHandler);
 
@@ -394,29 +395,40 @@ function d3Render(displayGraph) {
              .start()
 
   forceLayout.on("tick", function() {
+
+    var outOfBound = false
+
+    function isWithinBounds() {
+
+    }
+
+    nodes.each(function(d){
+      radius = parseInt(d3.select(this).attr('r'))
+      if (d.x < radius) d.x = radius
+      if (d.y < radius) d.y = radius
+      if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
+      if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
+    })
+
+    //
+    // when the force simulation is running, synchronizes the location
+    // of the d3 managed svg elements to the current simulation values
+    //
     links.attr("x1", function(d) { return d.source.x; })
          .attr("y1", function(d) { return d.source.y; })
          .attr("x2", function(d) { return d.target.x; })
-         .attr("y2", function(d) { return d.target.y; });
+         .attr("y2", function(d) { return d.target.y; })
 
     nodes.attr("cx", function(d) { return d.x; })
-         .attr("cy", function(d) { return d.y; });
-  });             
+         .attr("cy", function(d) { return d.y; })
 
-//
-// when the force simulation is running, synchronizes the location
-// of the d3 managed svg elements to the current simulation values
-//
-  function tickHandler() {
-    links.attr("x1", function(d) { return d.source.x; })
-         .attr("y1", function(d) { return d.source.y; })
-         .attr("x2", function(d) { return d.target.x; })
-         .attr("y2", function(d) { return d.target.y; });
+    //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+  })
 
-    nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-  }
+  forceLayout.on("end", function() {
+    console.log('layout stable')
+  })
 }
-
 
 //getFirstResultEnv('signature')
 
