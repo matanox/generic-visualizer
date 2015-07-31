@@ -15,8 +15,8 @@ var SVGText   = hiddenSVG.append('svg:text')
 var presentationSVGWidth = width
 var presentationSVGHeight = height - 100
 var presentationSVG = d3.select('body').append('svg:svg')
-                                         .attr('width', presentationSVGWidth)
-                                         .attr('height', presentationSVGHeight)
+                                       .attr('width', presentationSVGWidth)
+                                       .attr('height', presentationSVGHeight)
 
 var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
@@ -374,7 +374,11 @@ function SetOrUpdateD3Data(displayGraph) {
 var d3DataBind = { nodesJson:[], linksJson:[] }
 
 function d3ForceLayoutInit() {
-  console.log(d3DataBind.nodesJson)
+
+  // seperate hooks for all nodes v.s. all edges, to prevent links crossing nodes
+  presentationSVG.append("g").attr("class", "links") 
+  presentationSVG.append("g").attr("class", "nodes") 
+
   forceLayout = d3.layout.force()
                          .gravity(0.5)
                          .linkDistance(20)
@@ -424,10 +428,10 @@ function tick() {
 function d3Render(displayGraph) {
 
   d3DataBind = SetOrUpdateD3Data(displayGraph)
-  console.log('d3 data nodes ' + d3DataBind.nodesJson.length)
+  //console.log('d3 data nodes ' + d3DataBind.nodesJson.length)
 
   d3DisplayLinks = 
-    presentationSVG.selectAll(".link")
+    presentationSVG.select(".links").selectAll(".link")
       .data(d3DataBind.linksJson, function(edge) { return edge.v + edge.w })
 
   d3DisplayLinks
@@ -444,7 +448,7 @@ function d3Render(displayGraph) {
       })
 
   d3DisplayNodes = 
-    presentationSVG.selectAll(".node")
+    presentationSVG.select(".nodes").selectAll(".node")
       .data(d3DataBind.nodesJson, function(node) { return node.id })
 
   d3DisplayNodes
@@ -453,7 +457,7 @@ function d3Render(displayGraph) {
     .attr("id", function(node) { // for allowing indexed access
       return 'node' + node.id
     })
-    .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 200) })
+    .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 250) })
     .style("fill", function(node) { 
       if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
       if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
@@ -466,7 +470,7 @@ function d3Render(displayGraph) {
       if (node.kind == 'package')         return d3.rgb('white').darker(2)
     })
     .call(forceLayout.drag)
-    .on('click', function(node) {
+    .on('clickkkk', function(node) {
       //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
       console.log('Source Code:')
       console.log('------------')
@@ -474,7 +478,8 @@ function d3Render(displayGraph) {
     })
 
     .on('dblclick', function(node) {
-      node.fixed = !node.fixed // toggle whether the node is fixed to its location
+      console.log('in double click')
+      node.fixed = true
       addNodeNeighbors(node.id, 1)
       d3Render(displayGraph)
     })
@@ -505,9 +510,10 @@ function d3Render(displayGraph) {
       }
     })
 
-    forceLayout.drag().on('dragstart', function (node) {
-      node.fixed = true
-    })
+  forceLayout.drag().on('dragend', function (node) { // this is also triggered on mouse-down...
+                                                       // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior
+    node.fixed = true
+  })
 
   d3DisplayNodes.append("title") // this is some built-in SVG on-hover behavior
       .text(function(d) { return d.kind + ' ' + d.name; });
