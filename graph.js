@@ -237,8 +237,11 @@ function addNodeNeighbors(id, degree) {
     //testNodeOnwershipChain(edge.v)
     //testNodeOnwershipChain(edge.w)
 
-    displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+    //if (!displayGraph.hasNode(edge.v))
+      displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+    //if (!displayGraph.hasNode(edge.w))     
     displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
+
     displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
 
     if (edge.v != id) addNodeNeighbors(edge.v, degree - 1)
@@ -463,7 +466,7 @@ function d3Render(displayGraph) {
       if (node.kind == 'package')         return d3.rgb('white').darker(2)
     })
     .call(forceLayout.drag)
-    .on('dblclick', function(node) {
+    .on('click', function(node) {
       //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
       console.log('Source Code:')
       console.log('------------')
@@ -471,7 +474,7 @@ function d3Render(displayGraph) {
     })
 
     .on('dblclick', function(node) {
-      console.log('click')
+      node.fixed = !node.fixed // toggle whether the node is fixed to its location
       addNodeNeighbors(node.id, 1)
       d3Render(displayGraph)
     })
@@ -500,6 +503,10 @@ function d3Render(displayGraph) {
         var selector = '#node' + edge.w
         presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
       }
+    })
+
+    forceLayout.drag().on('dragstart', function (node) {
+      node.fixed = true
     })
 
   d3DisplayNodes.append("title") // this is some built-in SVG on-hover behavior
