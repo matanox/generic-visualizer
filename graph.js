@@ -229,10 +229,27 @@ function getOnwershipChain(id) {
   getNodeOwnershipChain(id)
 }
 
+// add node neighbors to display graph
+function addNodeNeighbors(id, degree) {
+  if (degree == 0) return   
+  globalGraph.nodeEdges(id).forEach(function(edge) {
+
+    //testNodeOnwershipChain(edge.v)
+    //testNodeOnwershipChain(edge.w)
+
+    displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+    displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
+    displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
+
+    if (edge.v != id) addNodeNeighbors(edge.v, degree - 1)
+    if (edge.w != id) addNodeNeighbors(edge.w, degree - 1)
+  })
+}
+
 function getNodeEnvGraph(id, degree) {
 
   // this is a naive implementation meant for very small values of degree.
-  // for any humbly large degree, this needs to be implemented for efficient Big O(V,E),
+  // for any humbly large degree, this needs to be re-implemented for efficient Big O(V,E),
   // as the current one is very naive in that sense.
 
   console.log(id)
@@ -240,22 +257,6 @@ function getNodeEnvGraph(id, degree) {
   displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
   
   displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
-
-  function addNodeNeighbors(id, degree) {
-    if (degree == 0) return   
-    globalGraph.nodeEdges(id).forEach(function(edge) {
-
-      //testNodeOnwershipChain(edge.v)
-      //testNodeOnwershipChain(edge.w)
-
-      displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
-      displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
-      displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
-
-      if (edge.v != id) addNodeNeighbors(edge.v, degree - 1)
-      if (edge.w != id) addNodeNeighbors(edge.w, degree - 1)
-    })
-  }
 
   addNodeNeighbors(id, degree)
   console.log(displayGraph)
@@ -272,6 +273,7 @@ function fireGraphDisplay(nodeId) {
   console.log('layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
   console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
   console.log('layout computed')
+  d3ForceLayoutInit()
   d3Render(displayGraph)
 }
 
@@ -334,53 +336,98 @@ function getFirstResultEnv(searchNodeName) {
   getNodeEnvGraph(firstResult, 1)
 }
 
-function d3Render(displayGraph) {
+function SetOrUpdateD3Data(displayGraph) {
+  //
+  // transform the input graph to a d3 input graph as per the format:
+  //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
+  //   https://github.com/mbostock/d3/wiki/Force-Layout#links
+  //
+  nodeIdIndex = {}
+  var nodesJson = displayGraph.nodes().map(function(id, index) {
+      nodeIdIndex[id] = index
 
-  function graphlibTod3(displayGraph) {
-    //
-    // transform the input graph to a d3 input graph as per the format:
-    //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
-    //   https://github.com/mbostock/d3/wiki/Force-Layout#links
-    //
-    nodeIdIndex = {}
-    var nodesJson = displayGraph.nodes().map(function(id, index) {
-        nodeIdIndex[id] = index
-
-        d3Node = displayGraph.node(id)
-        d3Node['id'] = id // add back the id
-        //console.log(d3Node[id.toString()])
-        // set the initial location via px, py
-        d3Node['px'] = displayGraph.node(id).x
-        d3Node['py'] = displayGraph.node(id).y
-        return d3Node
-      })
-
-    var linksJson = displayGraph.edges().map(function(edge) {
-      return { source: nodeIdIndex[edge.v], // d3 required index of node
-               target: nodeIdIndex[edge.w], // d3 required index of node
-               v: edge.v,                   // original node number
-               w: edge.w,                   // original node number
-               edgeKind: displayGraph.edge(edge).edgeKind }
+      d3Node = displayGraph.node(id)
+      d3Node['id'] = id // add back the id
+      //console.log(d3Node[id.toString()])
+      // set the initial location via px, py
+      d3Node['px'] = displayGraph.node(id).x
+      d3Node['py'] = displayGraph.node(id).y
+      return d3Node
     })
 
-    //console.log(displayGraph.edges())
-    //console.log(linksJson)
-    return { nodesJson, linksJson }
+  var linksJson = displayGraph.edges().map(function(edge) {
+    return { source: nodeIdIndex[edge.v], // d3 required index of node
+             target: nodeIdIndex[edge.w], // d3 required index of node
+             v: edge.v,                   // original node number
+             w: edge.w,                   // original node number
+             edgeKind: displayGraph.edge(edge).edgeKind }
+  })
+
+  //console.log(displayGraph.edges())
+  //console.log(linksJson)
+  return { nodesJson, linksJson }
+}
+
+var d3DataBind = { nodesJson:[], linksJson:[] }
+
+function d3ForceLayoutInit() {
+  console.log(d3DataBind.nodesJson)
+  forceLayout = d3.layout.force()
+                         .gravity(0.5)
+                         .linkDistance(20)
+                         .charge(-150)
+                         .size([presentationSVGWidth, presentationSVGHeight])
+                         .on("tick", tick)
+}
+
+function tick() {
+
+  function keepWithinDisplayBounds() {
+    d3DisplayNodes.each(function(d){
+      radius = parseInt(d3.select(this).attr('r'))
+      if (d.x < radius) d.x = radius
+      if (d.y < radius) d.y = radius
+      if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
+      if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
+    })
   }
 
-  var data = graphlibTod3(displayGraph)
+  function syncView() {
+    //
+    // when the force simulation is running, synchronizes the location
+    // of the d3 managed svg elements to the current simulation values
+    //
 
-  // d3 force simulation layout
-  var forceLayout = d3.layout.force()
-                               .linkDistance(20)
-                               .charge(-150)
-                               .gravity(0.5)
-                               .size([presentationSVGWidth, presentationSVGHeight])
-                               //.on("tick", tickHandler);
+    //console.log(d3DisplayNodes) 
 
-  var links = 
+    var count = 0
+
+    d3DisplayLinks.attr("x1", function(d) { return d.source.x; })
+                  .attr("y1", function(d) { return d.source.y; })
+                  .attr("x2", function(d) { return d.target.x; })
+                  .attr("y2", function(d) { return d.target.y; })
+
+    d3DisplayNodes.attr("cx", function(d) { count++; return d.x; })
+                  .attr("cy", function(d) { return d.y; })
+
+    //console.log(count)
+    //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+  }
+
+  keepWithinDisplayBounds()
+  syncView()
+}
+
+function d3Render(displayGraph) {
+
+  d3DataBind = SetOrUpdateD3Data(displayGraph)
+  console.log('d3 data nodes ' + d3DataBind.nodesJson.length)
+
+  d3DisplayLinks = 
     presentationSVG.selectAll(".link")
-      .data(data.linksJson)
+      .data(d3DataBind.linksJson, function(edge) { return edge.v + edge.w })
+
+  d3DisplayLinks
       .enter().append("line")
       .attr("class", "link")
       .attr("id", function(edge) { // for allowing indexed access
@@ -393,100 +440,77 @@ function d3Render(displayGraph) {
         if (edge.edgeKind == 'uses')            return d3.rgb('green')
       })
 
-  var nodes = 
+  d3DisplayNodes = 
     presentationSVG.selectAll(".node")
-      .data(data.nodesJson)
-      .enter().append("circle")
-      .attr("class", "node")
-      .attr("id", function(node) { // for allowing indexed access
-        return 'node' + node.id
-      })
-      .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 200) })
-      .style("fill", function(node) { 
-        if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
-        if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
-        if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
-        if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
-        if (node.kind == 'method')          
-          if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
-          else                              return d3.rgb('green')
-        if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
-        if (node.kind == 'package')         return d3.rgb('white').darker(2)
-      })
-      .call(forceLayout.drag)
-      .on('dblclick', function(node) {
-        //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
-        console.log('Source Code:')
-        console.log('------------')
-        console.log(sourceMap[node.id])
-      })
+      .data(d3DataBind.nodesJson, function(node) { return node.id })
 
-      .on('mouseover', function(node) {
-        for (edge of displayGraph.nodeEdges(node.id)) {
-          // highlight the edge
-          var selector = '#link' + edge.v + 'to' + edge.w
-          presentationSVG.select(selector).transition().style('stroke-width', 3)
-          // highlight its nodes
-          var selector = '#node' + edge.v
-          presentationSVG.select(selector).transition().style('stroke', 'orange')
-          var selector = '#node' + edge.w
-          presentationSVG.select(selector).transition().style('stroke', 'orange')
-        }
-      })
+  d3DisplayNodes
+    .enter().append("circle")
+    .attr("class", "node")
+    .attr("id", function(node) { // for allowing indexed access
+      return 'node' + node.id
+    })
+    .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 200) })
+    .style("fill", function(node) { 
+      if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
+      if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
+      if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
+      if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
+      if (node.kind == 'method')          
+        if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
+        else                              return d3.rgb('green')
+      if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
+      if (node.kind == 'package')         return d3.rgb('white').darker(2)
+    })
+    .call(forceLayout.drag)
+    .on('dblclick', function(node) {
+      //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
+      console.log('Source Code:')
+      console.log('------------')
+      console.log(sourceMap[node.id])
+    })
 
-      .on('mouseout', function(node) {
-        for (edge of displayGraph.nodeEdges(node.id)) {
-          // highlight the edge
-          var selector = '#link' + edge.v + 'to' + edge.w
-          presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
-          // highlight its nodes
-          var selector = '#node' + edge.v
-          presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
-          var selector = '#node' + edge.w
-          presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
-        }
-      })
+    .on('dblclick', function(node) {
+      console.log('click')
+      addNodeNeighbors(node.id, 1)
+      d3Render(displayGraph)
+    })
 
-  nodes.append("title") // this is some built-in on-hover d3 behavior
+    .on('mouseover', function(node) {
+      for (edge of displayGraph.nodeEdges(node.id)) {
+        // highlight the edge
+        var selector = '#link' + edge.v + 'to' + edge.w
+        presentationSVG.select(selector).transition().style('stroke-width', 3)
+        // highlight its nodes
+        var selector = '#node' + edge.v
+        presentationSVG.select(selector).transition().style('stroke', 'orange')
+        var selector = '#node' + edge.w
+        presentationSVG.select(selector).transition().style('stroke', 'orange')
+      }
+    })
+
+    .on('mouseout', function(node) {
+      for (edge of displayGraph.nodeEdges(node.id)) {
+        // highlight the edge
+        var selector = '#link' + edge.v + 'to' + edge.w
+        presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
+        // highlight its nodes
+        var selector = '#node' + edge.v
+        presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+        var selector = '#node' + edge.w
+        presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+      }
+    })
+
+  d3DisplayNodes.append("title") // this is some built-in SVG on-hover behavior
       .text(function(d) { return d.kind + ' ' + d.name; });
 
-  forceLayout.nodes(data.nodesJson)
-             .links(data.linksJson)
+  //console.log(d3DataBind.nodesJson.length)
+  //console.log(d3DataBind.nodesJson.length)
+  //console.log(d3DataBind.linksJson.length)
+  forceLayout.nodes(d3DataBind.nodesJson)
+             .links(d3DataBind.linksJson)
              .start()
-
-  forceLayout.on("tick", function() {
-
-    var outOfBound = false
-
-    function keepWithinDisplayBounds() {
-      nodes.each(function(d){
-        radius = parseInt(d3.select(this).attr('r'))
-        if (d.x < radius) d.x = radius
-        if (d.y < radius) d.y = radius
-        if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
-        if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
-      })
-    }
-
-    function udpateView() {
-      //
-      // when the force simulation is running, synchronizes the location
-      // of the d3 managed svg elements to the current simulation values
-      //
-      links.attr("x1", function(d) { return d.source.x; })
-           .attr("y1", function(d) { return d.source.y; })
-           .attr("x2", function(d) { return d.target.x; })
-           .attr("y2", function(d) { return d.target.y; })
-
-      nodes.attr("cx", function(d) { return d.x; })
-           .attr("cy", function(d) { return d.y; })
-
-      //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-    }
-
-    keepWithinDisplayBounds()
-    udpateView()
-  })
 
   forceLayout.on("end", function() {
     console.log('layout stable')
