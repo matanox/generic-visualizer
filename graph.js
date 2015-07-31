@@ -39,9 +39,9 @@ function getNodes(callback){
       
       console.log('loading sources, this may take a while...'); 
       
-      console.log('skipping preemptive source loading')
+      //console.log('skipping preemptive source loading')
       callback()
-      //getSources(callback)
+      getSources(function(){})
     }
   })
 }
@@ -83,7 +83,13 @@ function getEdges(callback){
 sourceMap = {}
 // recursively fetch source for all nodes, synchronously
 function getSources(callback, i) {
-  i = i+1 || 0; if (i == globalGraph.nodes().length) callback()
+  i = i+1 || 0; 
+
+  if (i == globalGraph.nodes().length) 
+  {
+    console.log('done fetching sources')
+    callback()
+  }
   else {
     id = globalGraph.nodes()[i]
     d3.text('cae-data/' + 'node-source-' + id, function(err, nodeSource) {
@@ -350,8 +356,10 @@ function d3Render(displayGraph) {
       })
 
     var linksJson = displayGraph.edges().map(function(edge) {
-      return { source: nodeIdIndex[edge.v], 
-               target: nodeIdIndex[edge.w],
+      return { source: nodeIdIndex[edge.v], // d3 required index of node
+               target: nodeIdIndex[edge.w], // d3 required index of node
+               v: edge.v,                   // original node number
+               w: edge.w,                   // original node number
                edgeKind: displayGraph.edge(edge).edgeKind }
     })
 
@@ -375,6 +383,9 @@ function d3Render(displayGraph) {
       .data(data.linksJson)
       .enter().append("line")
       .attr("class", "link")
+      .attr("id", function(edge) { // for allowing indexed access
+        return 'link' + edge.v + 'to' + edge.w
+      })
       .style("stroke-width", 1)
       .style("stroke", function(edge) { 
         if (edge.edgeKind == 'declares member') return d3.rgb('white').darker(2)
@@ -387,6 +398,9 @@ function d3Render(displayGraph) {
       .data(data.nodesJson)
       .enter().append("circle")
       .attr("class", "node")
+      .attr("id", function(node) { // for allowing indexed access
+        return 'node' + node.id
+      })
       .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 200) })
       .style("fill", function(node) { 
         if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
@@ -399,9 +413,41 @@ function d3Render(displayGraph) {
         if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
         if (node.kind == 'package')         return d3.rgb('white').darker(2)
       })
-      .call(forceLayout.drag);
+      .call(forceLayout.drag)
+      .on('dblclick', function(node) {
+        //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
+        console.log('Source Code:')
+        console.log('------------')
+        console.log(sourceMap[node.id])
+      })
 
-  nodes.append("title")
+      .on('mouseover', function(node) {
+        for (edge of displayGraph.nodeEdges(node.id)) {
+          // highlight the edge
+          var selector = '#link' + edge.v + 'to' + edge.w
+          presentationSVG.select(selector).transition().style('stroke-width', 3)
+          // highlight its nodes
+          var selector = '#node' + edge.v
+          presentationSVG.select(selector).transition().style('stroke', 'orange')
+          var selector = '#node' + edge.w
+          presentationSVG.select(selector).transition().style('stroke', 'orange')
+        }
+      })
+
+      .on('mouseout', function(node) {
+        for (edge of displayGraph.nodeEdges(node.id)) {
+          // highlight the edge
+          var selector = '#link' + edge.v + 'to' + edge.w
+          presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
+          // highlight its nodes
+          var selector = '#node' + edge.v
+          presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+          var selector = '#node' + edge.w
+          presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+        }
+      })
+
+  nodes.append("title") // this is some built-in on-hover d3 behavior
       .text(function(d) { return d.kind + ' ' + d.name; });
 
   forceLayout.nodes(data.nodesJson)
