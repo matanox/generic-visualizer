@@ -18,6 +18,92 @@ var presentationSVG = d3.select('body').append('svg:svg')
                                        .attr('width', presentationSVGWidth)
                                        .attr('height', presentationSVGHeight)
 
+function experimentalFishEyeIntegration() {
+  // Note: this feels a little jerky, maybe tweening is required
+  // Note: does not play well with the force layout ticks, but 
+  //       should be easy to reconcile the two by merging 
+  //       this logic into the main rendering function, to 
+  //       rely on the fisheye values directly there.
+  presentationSVG.on("mousemove", function() { 
+    fisheye.focus(d3.mouse(this)) 
+
+    d3DisplayNodes.each(function(d) { d.fisheye = fisheye(d); })
+        .attr("cx", function(d) { return d.fisheye.x; })
+        .attr("cy", function(d) { return d.fisheye.y; })
+        .attr("r", function(d) { return d.fisheye.z * 4.5; });
+
+    d3DisplayLinks.attr("points", function(d) {
+        var source = d.source.fisheye.x + "," + d.source.fisheye.y + " "
+        var mid    = (d.source.fisheye.x + d.target.fisheye.x)/2 + "," + (d.source.fisheye.y + d.target.fisheye.y)/2 + " "
+        var target = d.target.fisheye.x + "," + d.target.fisheye.y
+        return  source + mid + target
+      })
+  })
+}
+
+var fisheye = d3.fisheye.circular()
+    .radius(100)
+    .distortion(5);
+
+// arrow-head svg definition
+function setUsesShape(length, ratio) {
+
+  var shortEdgeLength = length * ratio
+
+  var path = 'M0,0' + 
+             'L0,' + shortEdgeLength +
+             'L' + length + ',' + (shortEdgeLength/2) +
+             'L0,0'
+
+
+  presentationSVG.append("svg:defs").selectAll("marker")
+      .data(["arrow"])      
+    .enter().append("svg:marker")
+      .attr("id", "arrow")
+      .attr("refX", 0) 
+      .attr("refY", shortEdgeLength/2)
+      .attr("markerWidth", length)
+      .attr("markerHeight", shortEdgeLength)
+      .attr("markerUnits", "userSpaceOnUse") 
+      //.attr("markerUnits", "strokeWidth")
+      .attr("orient", "auto")
+    .append("svg:path")
+      .attr("d", path)
+      .style("fill", d3.rgb('green'))      
+}; setUsesShape(10, 0.5)
+
+
+/*
+function setExtedsShape(length, ratio) {
+
+  var shortEdgeLength = length * ratio
+
+  var path = 'M0,0' + 
+             'L0,' + shortEdgeLength +
+             'L' + length + ',' + (shortEdgeLength/2) +
+             'L0,0'
+
+  presentationSVG.append("svg:defs").selectAll("marker")
+      .data(["nonDash"])      
+    .enter().append("svg:marker")
+      .attr("id", "nonDash")
+      .attr("refX", length) 
+      .attr("refY", shortEdgeLength/2)
+      .attr("markerWidth", length)
+      .attr("markerHeight", shortEdgeLength)
+      .attr("markerUnits", "userSpaceOnUse") 
+      //.attr("markerUnits", "strokeWidth")
+      .attr("orient", "auto")
+    .append("svg:path")
+      .attr("d", path)
+      .style("fill", d3.rgb('green'))      
+}; setExtedsShape(10, 0.5)
+*/
+
+// arrow-head svg definition
+
+
+
 var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
 function calcBBox(text) {
@@ -109,10 +195,14 @@ function verifyDataLoad(callback) {
   console.log('data loading done')
 
   applyGraphFilter()
+  applyRenames()
 
   console.log('data filters applied')
   initAwesomplete()
-  fireGraphDisplay(8464)
+  //fireGraphDisplay(87570)
+  //fireGraphDisplay(35478)
+  //fireGraphDisplay(8464)
+  fireGraphDisplay(8250)
 }
 
 // recursive removal of nodes owned by a given node, 
@@ -180,6 +270,9 @@ function filterByChain(chain, graph) {
     trim(nodeId)
 }
 
+//
+// filter out non-informative nodes from the global graph
+//
 function applyGraphFilter() {
   nodesBefore = globalGraph.nodes().length
   edgesBefore = globalGraph.edges().length
@@ -194,6 +287,15 @@ function applyGraphFilter() {
   console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') + 
               ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' + 
                parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
+}
+
+//
+// rename nodes in the global graph
+//
+function applyRenames() {
+  globalGraph.nodes().forEach(function(nodeId){
+    if (globalGraph.node(nodeId).name.indexOf('$') > 0) console.log(globalGraph.node(nodeId).name)
+  })
 }
 
 function fetchData(callback) {
@@ -230,22 +332,23 @@ function getOnwershipChain(id) {
 }
 
 // add node neighbors to display graph
-function addNodeNeighbors(id, degree) {
+function addNodeNeighbors(graph, id, degree) {
+  //console.log(id)
   if (degree == 0) return   
   globalGraph.nodeEdges(id).forEach(function(edge) {
-
+    console.log(edge)
     //testNodeOnwershipChain(edge.v)
     //testNodeOnwershipChain(edge.w)
 
     //if (!displayGraph.hasNode(edge.v))
-      displayGraph.setNode(edge.v, globalGraph.node(edge.v)) 
+    graph.setNode(edge.v, globalGraph.node(edge.v)) 
     //if (!displayGraph.hasNode(edge.w))     
-    displayGraph.setNode(edge.w, globalGraph.node(edge.w)) 
+    graph.setNode(edge.w, globalGraph.node(edge.w)) 
 
-    displayGraph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
+    graph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
 
-    if (edge.v != id) addNodeNeighbors(edge.v, degree - 1)
-    if (edge.w != id) addNodeNeighbors(edge.w, degree - 1)
+    if (edge.v != id) addNodeNeighbors(graph, edge.v, degree - 1)
+    if (edge.w != id) addNodeNeighbors(graph, edge.w, degree - 1)
   })
 }
 
@@ -257,18 +360,17 @@ function getNodeEnvGraph(id, degree) {
 
   console.log(id)
 
-  displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
+  var graph = new dagre.graphlib.Graph({ multigraph: true}); 
   
-  displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
+  graph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
 
-  addNodeNeighbors(id, degree)
-  console.log(displayGraph)
-  return displayGraph
+  addNodeNeighbors(graph, id, degree)
+  console.log(graph)
+  return graph
 }
 
 function fireGraphDisplay(nodeId) {
-  //var displayGraph = getNodeEnvGraph(nodeId,1)
-  var displayGraph = getNodeEnvGraph(nodeId,2)
+  displayGraph = getNodeEnvGraph(nodeId,2)
   displayGraph.setGraph({})
   dagre.layout(displayGraph)
 
@@ -331,14 +433,6 @@ function initAwesomplete() {
 
 }
 
-// temporary testing function
-function getFirstResultEnv(searchNodeName) {
-  firstResult = getNodesByName(searchNodeName)[0]
-  if (firstResult === undefined) return false
-  console.log(firstResult)
-  getNodeEnvGraph(firstResult, 1)
-}
-
 function SetOrUpdateD3Data(displayGraph) {
   //
   // transform the input graph to a d3 input graph as per the format:
@@ -375,8 +469,9 @@ var d3DataBind = { nodesJson:[], linksJson:[] }
 
 function d3ForceLayoutInit() {
 
-  // seperate hooks for all nodes v.s. all edges, to prevent links crossing nodes
+  // svg hooks for the content (separate hooks allow controlling for render "z-order")
   presentationSVG.append("g").attr("class", "links") 
+  presentationSVG.append("g").attr("class", "extensionArcs") 
   presentationSVG.append("g").attr("class", "nodes") 
 
   forceLayout = d3.layout.force()
@@ -409,13 +504,36 @@ function tick() {
 
     var count = 0
 
-    d3DisplayLinks.attr("x1", function(d) { return d.source.x; })
-                  .attr("y1", function(d) { return d.source.y; })
-                  .attr("x2", function(d) { return d.target.x; })
-                  .attr("y2", function(d) { return d.target.y; })
+    // d3DisplayLinks.attr("x1", function(d) { return d.source.x; })
+    //              .attr("y1", function(d) { return d.source.y; })
+    //              .attr("x2", function(d) { return d.target.x; })
+    //              .attr("y2", function(d) { return d.target.y; })
+
+    d3DisplayLinks.attr("points", function(d) {
+      var source = d.source.x + "," + d.source.y + " "
+      var mid    = (d.source.x + d.target.x)/2 + "," + (d.source.y + d.target.y)/2 + " "
+      var target = d.target.x + "," + d.target.y
+      return source + mid + target
+    })
+
 
     d3DisplayNodes.attr("cx", function(d) { count++; return d.x; })
                   .attr("cy", function(d) { return d.y; })
+
+    d3ExtensionArcs.attr("d", function(edge) {
+      //return "d","M 0 60 L 50 110 L 90 70 L 140 100"
+      //return ('M ' + parseInt(edge.source.x -40) + ' ' + parseInt(edge.source.y) + ' ' +
+      //        'L ' + parseInt(edge.source.x + 40) + ' ' + parseInt(edge.source.y))
+
+      return ('M' + (edge.source.x - 10) + ',' + (edge.source.y) + 
+              ' A1,1 0 0 1 ' +
+              + (edge.source.x + 10) + ',' + (edge.source.y))
+    })
+    .attr('transform', function(edge) {
+      var edgeAngleDeg = Math.atan((edge.source.y - edge.target.y) / (edge.source.x - edge.target.x)) * 180 / Math.PI
+      if (edge.source.x < edge.target.x) edgeAngleDeg += 180
+      return 'rotate(' + (edgeAngleDeg - 90) + ' ' + edge.source.x + ' ' + edge.source.y + ')'
+    })
 
     //console.log(count)
     //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
@@ -423,6 +541,7 @@ function tick() {
 
   keepWithinDisplayBounds()
   syncView()
+  // forceLayout.stop() // show dagre layout without really letting the force layout
 }
 
 function d3Render(displayGraph) {
@@ -435,7 +554,7 @@ function d3Render(displayGraph) {
       .data(d3DataBind.linksJson, function(edge) { return edge.v + edge.w })
 
   d3DisplayLinks
-      .enter().append("line")
+      .enter().append("polyline")
       .attr("class", "link")
       .attr("id", function(edge) { // for allowing indexed access
         return 'link' + edge.v + 'to' + edge.w
@@ -446,6 +565,35 @@ function d3Render(displayGraph) {
         if (edge.edgeKind == 'extends')         return d3.rgb('blue')
         if (edge.edgeKind == 'uses')            return d3.rgb('green')
       })
+      .attr("marker-mid", function(edge) {
+        if (edge.edgeKind == 'uses')            return "url(#arrow)"
+      })
+      //.attr("marker-mid", function(edge) {
+      //  if (edge.edgeKind == 'extends')         return "url(#nonDash)"
+      //})
+      .attr("stroke-dasharray", function(edge) {
+        if (edge.edgeKind == 'declares member') return "none"
+        if (edge.edgeKind == 'extends')         return "4,3"
+        if (edge.edgeKind == 'uses')            return "none"
+      })
+
+
+  var extendEdges = d3DataBind.linksJson.filter(function(edge) { 
+    if (edge.edgeKind == 'extends') return true
+    return false
+  })
+      
+  d3ExtensionArcs = presentationSVG.select(".extensionArcs").selectAll(".extensionArc")
+    .data(extendEdges, function(edge) { return edge.v + edge.w })
+
+  d3ExtensionArcs
+    .enter().append("path")
+    .attr("class", "extensionArc")
+    .attr("id", function(edge) { // for allowing indexed access
+      console.log('an arc')
+      return 'arc' + edge.v + 'to' + edge.w
+    })
+
 
   d3DisplayNodes = 
     presentationSVG.select(".nodes").selectAll(".node")
@@ -470,8 +618,9 @@ function d3Render(displayGraph) {
       if (node.kind == 'package')         return d3.rgb('white').darker(2)
     })
     .call(forceLayout.drag)
-    .on('clickkkk', function(node) {
+    .on('click', function(node) { // see http://stackoverflow.com/questions/14969789/how-to-interpret-short-drag-events-as-clicks?rq=1
       //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
+      
       console.log('Source Code:')
       console.log('------------')
       console.log(sourceMap[node.id])
@@ -479,8 +628,11 @@ function d3Render(displayGraph) {
 
     .on('dblclick', function(node) {
       console.log('in double click')
+      //console.log(node.id)
       node.fixed = true
-      addNodeNeighbors(node.id, 1)
+      console.log(displayGraph.nodes().length)
+      addNodeNeighbors(displayGraph, node.id, 1)
+      console.log(displayGraph.nodes().length)
       d3Render(displayGraph)
     })
 
@@ -524,6 +676,8 @@ function d3Render(displayGraph) {
   forceLayout.nodes(d3DataBind.nodesJson)
              .links(d3DataBind.linksJson)
              .start()
+
+
 
   forceLayout.on("end", function() {
     console.log('layout stable')
