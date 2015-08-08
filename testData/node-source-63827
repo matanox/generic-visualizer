@@ -1,0 +1,7 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  def persistCustom[T, P <: Producer[T], A <: Artifact: ClassTag](
+    original: P,
+    makePersisted: (P, A) => PersistedProducer[T, A],
+    name: String = null,
+    suffix: String = ""

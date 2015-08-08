@@ -1,0 +1,6 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+  implicit object StringToString extends StringSerializable[String] {
+    override def fromString(s: String): String = s
+    override def toString(param: String): String = param
+  }

@@ -1,0 +1,24 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+
+trait StructuredArtifact extends Artifact {
+  import org.allenai.pipeline.StructuredArtifact.{ Reader, Writer }
+  def reader: Reader
+  /** Like FlatArtifacts, the write interface enforces atomic writes to a StructuredArtifact
+    * Client code cannot open/close an OutputStream, and a failed write should create no Artifact.
+    */
+  def write[T](writer: Writer => T): T
+  def copyTo(other: StructuredArtifact): Unit = {
+    other.write { writer =>
+      for ((name, is) <- reader.readAll) {
+        // scalastyle:off
+        val buffer = new Array[Byte](16384)
+        // scalastyle:on
+        writer.writeEntry(name) { entryWriter =>
+          Iterator.continually(is.read(buffer)).takeWhile(_ != -1).foreach(n => entryWriter.
+            write(buffer, 0, n))
+          is.close()
+        }
+      }
+    }
+  }
+}

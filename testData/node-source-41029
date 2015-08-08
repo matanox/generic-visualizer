@@ -1,0 +1,17 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/StreamClosingIterator.scala >
+
+object StreamClosingIterator {
+  def apply[T](is: InputStream)(makeIterator: InputStream => Iterator[T]): Iterator[T] = {
+    val it = makeIterator(is)
+    new Iterator[T] {
+      private var stillReading = it.hasNext
+      override def next(): T = {
+        val result = it.next()
+        stillReading = it.hasNext
+        if (!stillReading) is.close()
+        result
+      }
+      override def hasNext: Boolean = stillReading
+    }
+  }
+}

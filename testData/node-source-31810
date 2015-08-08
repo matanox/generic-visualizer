@@ -1,0 +1,19 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+  override def write[T](writer: Writer => T): T = {
+    if (dir.exists) {
+      FileUtils.cleanDirectory(dir)
+    }
+    val tmpDir = createTempDirectory
+    val dirWriter = new Writer {
+      def writeEntry[T2](name: String)(writer: ArtifactStreamWriter => T2): T2 = {
+        val out = new FileOutputStream(new File(tmpDir, name))
+        val result = writer(new ArtifactStreamWriter(out))
+        out.close()
+        result
+      }
+    }
+    val result = writer(dirWriter)
+    require(tmpDir.renameTo(dir), s"Unable to create directory $dir")
+    result
+  }

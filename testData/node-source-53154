@@ -1,0 +1,5 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+  def run(
+    inputs: Map[String, () => InputStream] = Map(),
+    stdinput: () => InputStream = () => new ByteArrayInputStream(Array.emptyByteArray)

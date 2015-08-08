@@ -1,0 +1,7 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
+
+    val links = (for {
+      stepName <- targets
+      step = nameToStep(stepName)
+      (from, to, name) <- findLinks(step.stepInfo)
+    } yield Link(from.signature.id, to.signature.id, name)).toSet

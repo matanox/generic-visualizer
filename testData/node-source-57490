@@ -1,0 +1,10 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+    def ifSuccessful[T](f: CommandOutput => T): () => T = { () =>
+      val result = processCmd.get
+      result match {
+        case CommandOutput(0, _, _, _) => f(result)
+        case CommandOutput(_, _, stderr, _) =>
+          sys.error(s" Failed to run command ${processCmd.stepInfo.parameters("cmd")}: $stderr")
+      }
+    }

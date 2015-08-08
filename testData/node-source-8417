@@ -1,0 +1,15 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+
+trait Ai2SimpleStepInfo extends PipelineStep {
+  override def stepInfo =
+    Ai2CodeInfo(this, classVersion = ("" +: versionHistory).last)
+      .copy(description = descriptionOption)
+  /** Whenever the logic of this class is updated, the corresponding release number should
+    * be added to this list.  The unchangedSince field will be set to the latest version that is
+    * still earlier than the version in the jar file.
+    */
+  def versionHistory: Seq[String] = List()
+  def description: String = ""
+  protected def descriptionOption =
+    if (description != null && description.nonEmpty) Some(description) else None
+}

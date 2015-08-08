@@ -1,0 +1,4 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+
+    Ai2CodeInfo(this, classVersion = ("" +: versionHistory).last)
+      .copy(description = descriptionOption)

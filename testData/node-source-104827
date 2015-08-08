@@ -1,0 +1,3 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+
+  override def toString: String = s"S3Artifact[${config.bucket}, $path}]"

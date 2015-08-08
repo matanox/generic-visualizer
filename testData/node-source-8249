@@ -1,0 +1,14 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+
+object StructuredArtifact {
+  trait Reader {
+    /** Read a single entry by name. */
+    def read(entryName: String): InputStream
+    /** Read all entries in order. */
+    def readAll: Iterator[(String, InputStream)]
+  }
+  trait Writer {
+    /** Write a single entry. */
+    def writeEntry[T](name: String)(writer: ArtifactStreamWriter => T): T
+  }
+}

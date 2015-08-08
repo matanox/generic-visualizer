@@ -1,0 +1,10 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+  private val parentDir = {
+    val f = dir.getCanonicalFile.getParentFile
+    require(
+      (f.exists && f.isDirectory) || f.mkdirs,
+      s"Unable to find or create directory $dir"
+    )
+    f
+  }

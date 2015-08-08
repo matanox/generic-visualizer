@@ -1,0 +1,4 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+
+  protected def descriptionOption =
+    if (description != null && description.nonEmpty) Some(description) else None

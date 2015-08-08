@@ -1,0 +1,4 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+
+  def unapply[T1, T2, T3](
+    input: (Producer[(T1, T2, T3)], (String, String, String))

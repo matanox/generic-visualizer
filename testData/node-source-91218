@@ -1,0 +1,6 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/SaveToArtifact.scala >
+
+case class SaveToArtifact[T, A <: Artifact](
+    input: Producer[T],
+    writer: Serializer[T, A],
+    artifact: A

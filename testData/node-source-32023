@@ -1,0 +1,4 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
+
+  implicit def asStructuredArtifact(url: URI) =
+    CreateCoreArtifacts.fromFileUrls.urlToArtifact[StructuredArtifact].apply(url)

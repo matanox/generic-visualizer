@@ -202,7 +202,7 @@ function verifyDataLoad(callback) {
   //fireGraphDisplay(87570)
   //fireGraphDisplay(35478)
   //fireGraphDisplay(8464)
-  fireGraphDisplay(8250)
+  //fireGraphDisplay(8250)
 }
 
 // recursive removal of nodes owned by a given node, 
@@ -530,8 +530,12 @@ function tick() {
               + (edge.source.x + 10) + ',' + (edge.source.y))
     })
     .attr('transform', function(edge) {
+
+      // get the direction of the edge as an angle
       var edgeAngleDeg = Math.atan((edge.source.y - edge.target.y) / (edge.source.x - edge.target.x)) * 180 / Math.PI
       if (edge.source.x < edge.target.x) edgeAngleDeg += 180
+
+      // rotate arc according to this angle
       return 'rotate(' + (edgeAngleDeg - 90) + ' ' + edge.source.x + ' ' + edge.source.y + ')'
     })
 

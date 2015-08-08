@@ -1,0 +1,20 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Pipeline.scala >
+
+object S3Pipeline {
+  def apply(
+    rootUrl: URI,
+    awsCredentials: S3Credentials = S3Config.environmentCredentials()
+  ) = new S3Pipeline {
+    def rootOutputUrl = rootUrl
+    override def credentials = awsCredentials
+  }
+  def configured(
+    cfg: Config,
+    awsCredentials: S3Credentials = S3Config.environmentCredentials()
+  ) = {
+    new ConfiguredPipeline with S3Pipeline {
+      override val config = cfg
+      override def credentials = awsCredentials
+    }
+  }
+}

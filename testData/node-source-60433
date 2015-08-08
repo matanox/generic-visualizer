@@ -1,0 +1,4 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
+
+      def fromJson[T: JsonFormat: ClassTag](artifact: FlatArtifact): Producer[Iterator[T]] =
+        fromArtifact(LineIteratorIo.json[T], artifact)

@@ -1,0 +1,7 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+  class ExtractOutputComponent(
+      name: String,
+      f: CommandOutput => () => InputStream,
+      processCmd: Producer[CommandOutput],
+      requireStatusCode: Iterable[Int] = List(0)

@@ -1,0 +1,6 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Pipeline.scala >
+
+  ) = new S3Pipeline {
+    def rootOutputUrl = rootUrl
+    override def credentials = awsCredentials
+  }

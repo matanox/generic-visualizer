@@ -1,0 +1,3 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+          val stderrString = IOUtils.readLines(stderr()).asScala.take(100)

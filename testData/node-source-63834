@@ -1,0 +1,12 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  def addTarget[T, A <: Artifact](name: String, target: PersistedProducer[T, A]) = {
+    var i = 1
+    var stepName = name
+    while (steps.contains(stepName)) {
+      stepName = s"$name.$i"
+      i += 1
+    }
+    steps(stepName) = target
+    target
+  }

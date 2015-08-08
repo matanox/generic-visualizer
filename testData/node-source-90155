@@ -1,0 +1,7 @@
+< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+
+trait Ai2StepInfo extends Ai2SimpleStepInfo {
+  this: Product =>
+  override def stepInfo =
+    super.stepInfo.addObject(this)
+}
