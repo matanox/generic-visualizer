@@ -206,7 +206,7 @@ function verifyDataLoad(callback) {
   initAwesomplete()
   //fireGraphDisplay(87570)
   //fireGraphDisplay(35478)
-  //fireGraphDisplay(8464)
+  fireGraphDisplay(8464)
   //fireGraphDisplay(8250)
 }
 
@@ -336,6 +336,12 @@ function getOnwershipChain(id) {
   getNodeOwnershipChain(id)
 }
 
+function addNodeToDisplay(id) {
+  var node = globalGraph.node(id)
+  node.status = {}
+  displayGraph.setNode(id, node)  
+}
+
 // add node neighbors to display graph
 function addNodeNeighbors(graph, id, degree) {
   //console.log(id)
@@ -346,9 +352,9 @@ function addNodeNeighbors(graph, id, degree) {
     //testNodeOnwershipChain(edge.w)
 
     //if (!displayGraph.hasNode(edge.v))
-    graph.setNode(edge.v, globalGraph.node(edge.v)) 
+    addNodeToDisplay(edge.v)
     //if (!displayGraph.hasNode(edge.w))     
-    graph.setNode(edge.w, globalGraph.node(edge.w)) 
+    addNodeToDisplay(edge.w)
 
     graph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
 
@@ -367,8 +373,8 @@ function getNodeEnvGraph(id, degree) {
 
   //var graph = new dagre.graphlib.Graph({ multigraph: true}); 
   
-  displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
-
+  addNodeToDisplay(id)
+  
   addNodeNeighbors(displayGraph, id, degree)
   console.log(displayGraph)
   return displayGraph
@@ -659,15 +665,19 @@ function d3Render(displayGraph) {
     .on('click', function(node) { // see http://stackoverflow.com/questions/14969789/how-to-interpret-short-drag-events-as-clicks?rq=1
       //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
       
-      console.log('Source Code:')
-      console.log('------------')
-      console.log(sourceMap[node.id])
+      //console.log('Source Code:')
+      //console.log('------------')
+      //console.log(sourceMap[node.id])
     })
 
     .on('dblclick', function(node) {
       console.log('in double click')
       //console.log(node.id)
-      node.fixed = true
+      //node.fixed = true
+
+      console.log("node")
+      console.log(node) 
+
       console.log(displayGraph.nodes().length)
       addNodeNeighbors(displayGraph, node.id, 1)
       console.log(displayGraph.nodes().length)
@@ -700,12 +710,21 @@ function d3Render(displayGraph) {
       }
     })
 
-  forceLayout.drag().on('dragend', function (node) { // this is also triggered on mouse-down...
-                                                       // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior
-    node.fixed = true
+  forceLayout.drag().on('dragstart', function (d) { 
+    console.log("drag starttttttttttttt")
+    dragStart = {x: d.x, y: d.y}
   })
 
-  d3DisplayNodes.append("title") // this is some built-in SVG on-hover behavior
+  forceLayout.drag().on('dragend', function (d) { 
+    // guard against click that was not a drag
+    // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
+    if (dragStart.x == d.x && dragStart.y == d.y) return                                                    
+
+    d.fixed = true
+  })
+
+  d3DisplayNodes.append("title") // this is the default html tooltip definition
+      .attr("class", "tooltip")
       .text(function(d) { return d.kind + ' ' + d.name; });
 
   //console.log(d3DataBind.nodesJson.length)
