@@ -1,7 +1,21 @@
 console.log('javascript started')
 
-var width = document.body.clientWidth
-var height = document.body.scrollHeight
+var width
+var height
+var presentationSVGWidth 
+var presentationSVGHeight
+
+function windowResizeHandler() {
+  width = document.body.clientWidth
+  height = document.body.scrollHeight
+
+  presentationSVGWidth = width
+  presentationSVGHeight = height - 100
+
+  presentationSVG.attr('width', presentationSVGWidth)
+                 .attr('height', presentationSVGHeight)
+
+}
 
 console.log('viewport dimensions: ' + width + ', ' + height)
 
@@ -12,11 +26,9 @@ var SVGText   = hiddenSVG.append('svg:text')
                          .attr('x', -500)
                          .style('font-size', '14px')
 
-var presentationSVGWidth = width
-var presentationSVGHeight = height - 100
 var presentationSVG = d3.select('body').append('svg:svg')
-                                       .attr('width', presentationSVGWidth)
-                                       .attr('height', presentationSVGHeight)
+  
+windowResizeHandler()
 
 function experimentalFishEyeIntegration() {
   // Note: this feels a little jerky, maybe tweening is required
@@ -203,6 +215,11 @@ function verifyDataLoad(callback) {
 
   d3ForceLayoutInit()
 
+  window.onresize = function() {
+    windowResizeHandler()
+    d3Render(displayGraph)
+  }
+
   initAwesomplete()
   //fireGraphDisplay(87570)
   //fireGraphDisplay(35478)
@@ -338,7 +355,7 @@ function getOnwershipChain(id) {
 
 function addNodeToDisplay(id) {
   var node = globalGraph.node(id)
-  node.status = {}
+  node.status = {} // for adding behavior that requirest node status
   displayGraph.setNode(id, node)  
 }
 
