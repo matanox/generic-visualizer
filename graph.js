@@ -199,6 +199,8 @@ function verifyDataLoad(callback) {
 
   console.log('data filters applied')
   
+  displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
+
   d3ForceLayoutInit()
 
   initAwesomplete()
@@ -363,13 +365,13 @@ function getNodeEnvGraph(id, degree) {
 
   console.log(id)
 
-  var graph = new dagre.graphlib.Graph({ multigraph: true}); 
+  //var graph = new dagre.graphlib.Graph({ multigraph: true}); 
   
-  graph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
+  displayGraph.setNode(id, globalGraph.node(id)) // copy provided node from global graph
 
-  addNodeNeighbors(graph, id, degree)
-  console.log(graph)
-  return graph
+  addNodeNeighbors(displayGraph, id, degree)
+  console.log(displayGraph)
+  return displayGraph
 }
 
 function makeHierarchyChain(nodeId) {
@@ -402,9 +404,9 @@ function computeCirclePack(hierarchy) {
 function fireGraphDisplay(nodeId) {
   displayGraph = getNodeEnvGraph(nodeId,2)
   displayGraph.setGraph({})
-  dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
-                             // not bound to the window's viewport but may
-                             // be much much larger.
+  //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
+                               // not bound to the window's viewport but may
+                               // be much much larger.
 
   console.log(displayGraph)
   console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
