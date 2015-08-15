@@ -5,8 +5,6 @@ var height
 var presentationSVGWidth 
 var presentationSVGHeight
 
-var nodeZoom = false
-
 function windowResizeHandler() {
   width = document.body.clientWidth
   height = document.body.scrollHeight
@@ -19,7 +17,7 @@ function windowResizeHandler() {
 
 }
 
-var interactionState = { "inDrag": false }
+var interactionState = {}
 
 console.log('viewport dimensions: ' + width + ', ' + height)
 
@@ -395,7 +393,7 @@ function getNodeEnvGraph(id, degree) {
   //var graph = new dagre.graphlib.Graph({ multigraph: true}); 
   
   addNodeToDisplay(id)
-  
+
   addNodeNeighbors(displayGraph, id, degree)
   //console.log(displayGraph)
   return displayGraph
@@ -429,7 +427,7 @@ function computeCirclePack(hierarchy) {
 
 // compute circle graph
 function fireGraphDisplay(nodeId) {
-  displayGraph = getNodeEnvGraph(nodeId,2)
+  displayGraph = getNodeEnvGraph(nodeId,1)
   displayGraph.setGraph({})
   //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
                                // not bound to the window's viewport but may
@@ -443,6 +441,10 @@ function fireGraphDisplay(nodeId) {
   computeCirclePack(makeHierarchyChain(nodeId)) // we don't do anything with it right now
 
   d3Render(displayGraph)
+
+  var selector = '#node' + nodeId
+  presentationSVG.select(selector).style('stroke', 'orange').style('stroke-width', '3.5px')
+                                  .transition().duration(4000).style('stroke', '#fff').style('stroke-width', '1.5px')
 }
 
 function initAwesomplete() {
@@ -685,6 +687,18 @@ function d3Render(displayGraph) {
     })
     .call(forceLayout.drag)
 
+    .on('mousedown', function(node) {
+      mouseDown = new Date()
+      mouseDownCoords = {x: node.x, y: node.y}
+    })
+
+    .on('mouseup', function(node) {
+      mouseUp = new Date()
+      if (mouseUp.getTime() - mouseDown.getTime() > 750) 
+        if (mouseDownCoords.x - node.x == 0 && mouseDownCoords.y - node.y == 0)
+          expandNode(node)
+    })
+
     .on('dblclick', function(node) {
       console.log('in double click')
       //console.log(node.id)
@@ -730,7 +744,7 @@ function d3Render(displayGraph) {
   })
 
 
-  function onClick(node) {
+  function expandNode(node) {
     var supershape = d3.superformula()
                        .type("rectangle")
                        .size(1000)
@@ -741,8 +755,6 @@ function d3Render(displayGraph) {
     var radius = Math.min(presentationSVGWidth, presentationSVGHeight) / 2
 
     presentationSVG.select(selector).transition().duration(2000).attr("r", radius)
-
-    nodeZoom = true
 
     d3Render(displayGraph)
 
@@ -758,11 +770,12 @@ function d3Render(displayGraph) {
 
     // determine drag-end v.s. click, by mouse movement
     // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
-    if (dragStart.x == d.x && dragStart.y == d.y) 
-      onClick(d)
-    else
+    if (dragStart.x - d.x == 0 && dragStart.y - d.y == 0) {
+      console.log("click")
+      //expandNode(d)
+    }
+    else 
       d.fixed = true
-
   })
 
   d3DisplayNodes.append("title") // this is the default html tooltip definition
@@ -778,7 +791,6 @@ function d3Render(displayGraph) {
 
   forceLayout.on("end", function() {
     console.log('layout stable')
-    nodeZoom = false
   })
 }
 
