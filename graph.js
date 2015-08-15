@@ -5,6 +5,8 @@ var height
 var presentationSVGWidth 
 var presentationSVGHeight
 
+var nodeZoom = false
+
 function windowResizeHandler() {
   width = document.body.clientWidth
   height = document.body.scrollHeight
@@ -16,6 +18,8 @@ function windowResizeHandler() {
                  .attr('height', presentationSVGHeight)
 
 }
+
+var interactionState = { "inDrag": false }
 
 console.log('viewport dimensions: ' + width + ', ' + height)
 
@@ -364,7 +368,7 @@ function addNodeNeighbors(graph, id, degree) {
   //console.log(id)
   if (degree == 0) return   
   globalGraph.nodeEdges(id).forEach(function(edge) {
-    console.log(edge)
+    //console.log(edge)
     //testNodeOnwershipChain(edge.v)
     //testNodeOnwershipChain(edge.w)
 
@@ -393,7 +397,7 @@ function getNodeEnvGraph(id, degree) {
   addNodeToDisplay(id)
   
   addNodeNeighbors(displayGraph, id, degree)
-  console.log(displayGraph)
+  //console.log(displayGraph)
   return displayGraph
 }
 
@@ -539,7 +543,7 @@ function d3ForceLayoutInit() {
                          .on("tick", tick)
 }
 
-function tick() {
+function tick(additionalConstraintFunc) {
 
   function keepWithinDisplayBounds() {
     d3DisplayNodes.each(function(d){
@@ -601,6 +605,7 @@ function tick() {
   }
 
   keepWithinDisplayBounds()
+  if (typeof additionalConstraintFunc === 'function') additionalConstraintFunc()
   syncView()
   // forceLayout.stop() // show dagre layout without really letting the force layout
 }
@@ -651,7 +656,7 @@ function d3Render(displayGraph) {
     .enter().append("path")
     .attr("class", "extensionArc")
     .attr("id", function(edge) { // for allowing indexed access
-      console.log('an arc')
+      //console.log('an arc')
       return 'arc' + edge.v + 'to' + edge.w
     })
 
@@ -679,25 +684,18 @@ function d3Render(displayGraph) {
       if (node.kind == 'package')         return d3.rgb('white').darker(2)
     })
     .call(forceLayout.drag)
-    .on('click', function(node) { // see http://stackoverflow.com/questions/14969789/how-to-interpret-short-drag-events-as-clicks?rq=1
-      //var radius = d3.select(this).attr('r'); d3.select(this).attr('r', radius * 3)
-      
-      //console.log('Source Code:')
-      //console.log('------------')
-      //console.log(sourceMap[node.id])
-    })
 
     .on('dblclick', function(node) {
       console.log('in double click')
       //console.log(node.id)
       //node.fixed = true
 
-      console.log("node")
-      console.log(node) 
+      //console.log("node")
+      //console.log(node) 
 
-      console.log(displayGraph.nodes().length)
+      //console.log(displayGraph.nodes().length)
       addNodeNeighbors(displayGraph, node.id, 1)
-      console.log(displayGraph.nodes().length)
+      //console.log(displayGraph.nodes().length)
       d3Render(displayGraph)
     })
 
@@ -728,16 +726,43 @@ function d3Render(displayGraph) {
     })
 
   forceLayout.drag().on('dragstart', function (d) { 
-    console.log("drag starttttttttttttt")
     dragStart = {x: d.x, y: d.y}
   })
 
-  forceLayout.drag().on('dragend', function (d) { 
-    // guard against click that was not a drag
-    // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
-    if (dragStart.x == d.x && dragStart.y == d.y) return                                                    
 
-    d.fixed = true
+  function onClick(node) {
+    var supershape = d3.superformula()
+                       .type("rectangle")
+                       .size(1000)
+                       .segments(3600);
+
+    var selector = '#node' + node.id
+
+    var radius = Math.min(presentationSVGWidth, presentationSVGHeight) / 2
+
+    presentationSVG.select(selector).transition().duration(2000).attr("r", radius)
+
+    nodeZoom = true
+
+    d3Render(displayGraph)
+
+    console.log(node)                   
+    console.log(supershape)
+
+    //console.log('Source Code:')
+    //console.log('------------')
+    //console.log(sourceMap[node.id])
+  }
+
+  forceLayout.drag().on('dragend', function (d) { 
+
+    // determine drag-end v.s. click, by mouse movement
+    // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
+    if (dragStart.x == d.x && dragStart.y == d.y) 
+      onClick(d)
+    else
+      d.fixed = true
+
   })
 
   d3DisplayNodes.append("title") // this is the default html tooltip definition
@@ -751,10 +776,9 @@ function d3Render(displayGraph) {
              .links(d3DataBind.linksJson)
              .start()
 
-
-
   forceLayout.on("end", function() {
     console.log('layout stable')
+    nodeZoom = false
   })
 }
 
