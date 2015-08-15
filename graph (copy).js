@@ -198,13 +198,10 @@ function verifyDataLoad(callback) {
   applyRenames()
 
   console.log('data filters applied')
-  
-  d3ForceLayoutInit()
-
   initAwesomplete()
   //fireGraphDisplay(87570)
   //fireGraphDisplay(35478)
-  //fireGraphDisplay(8464)
+  fireGraphDisplay(8464)
   //fireGraphDisplay(8250)
 }
 
@@ -385,8 +382,7 @@ function makeHierarchyChain(nodeId) {
   return hierarchyNode
 }
 
-// compute a circle pack layout for a given hierarchy
-function computeCirclePack(hierarchy) {
+function addCirclePack(hierarchy) {
 
   var pack = d3.layout.pack()
     .size([100, 100])
@@ -394,25 +390,27 @@ function computeCirclePack(hierarchy) {
     .value(function(d) { return 20 })
 
   pack(hierarchy)
+  console.warn(hierarchy) 
   var nodes = pack.nodes(hierarchy)
   var links = pack.links(nodes)
+  console.warn(nodes)
+  console.warn(links)
+
 }
 
-// compute circle graph
 function fireGraphDisplay(nodeId) {
   displayGraph = getNodeEnvGraph(nodeId,2)
   displayGraph.setGraph({})
-  dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
-                             // not bound to the window's viewport but may
-                             // be much much larger.
+  dagre.layout(displayGraph)
 
   console.log(displayGraph)
   console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
   console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
   console.log('layout computed')
 
-  computeCirclePack(makeHierarchyChain(nodeId)) // we don't do anything with it right now
+  addCirclePack(makeHierarchyChain(nodeId))
 
+  d3ForceLayoutInit()
   d3Render(displayGraph)
 }
 
