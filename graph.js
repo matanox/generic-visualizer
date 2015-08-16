@@ -23,7 +23,7 @@ console.log('viewport dimensions: ' + width + ', ' + height)
 
 // create svg for working out dimensions necessary for rendering labels' text
 var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('height', 0)
-var SVGText   = hiddenSVG.append('svg:text')
+var svgText   = hiddenSVG.append('svg:text')
                          .attr('y', -500)
                          .attr('x', -500)
                          .style('font-size', '14px')
@@ -120,9 +120,46 @@ function setExtedsShape(length, ratio) {
 
 var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
-function calcBBox(text) {
-  SVGText.text(text);
-  return SVGText.node().getBBox();
+function formattedText(node) {
+
+  function splitByLengthAndCamel(text) {
+    function isUpperCase(char) {
+      return (char >= 'A' && char <= 'Z') // is this locale safe?
+    }
+
+    for (i = 0; i < text.length; i++)
+    {
+      if (i > 0 && !isUpperCase(text.charAt(i-1))) 
+        if(isUpperCase(text.charAt(i)))
+          if (i > 3)
+            return [text.slice(0, i)].concat(splitByLengthAndCamel(text.slice(i)))
+
+      if (i == text.length-1) return [text]
+    }
+  }
+
+  //var text = [node.kind]
+  var text = []
+  
+  var splitName = splitByLengthAndCamel(node.name)
+
+  splitName.forEach(function(line) {
+    text.push(line)
+  })
+
+  return text
+}
+
+function calcBBox(node) {
+  svgText.selectAll('tspan').remove()
+  formattedText(node).forEach(function(line) {
+    svgText.append('tspan')
+                 .attr("text-anchor", "middle")
+                 .attr('x', 0)
+                 .attr('dy', '1.2em')
+                 .text(line)    
+  })
+  return svgText.node().getBBox()
 }
 
 function getNodes(callback){
@@ -132,8 +169,11 @@ function getNodes(callback){
     else {
       console.log('input nodes: '); console.dir (inputNodes)
       inputNodes.forEach(function(node) {
-        bbox = calcBBox(node.name)
-        globalGraph.setNode(node.id, { name: node.name, kind: node.kind, width:bbox.width, height:bbox.height })
+        bbox = calcBBox(node)
+        //console.log(bbox)
+        globalGraph.setNode(node.id, { name:   node.name, 
+                                       kind:   node.kind, 
+                                       textBbox: bbox })
       })
       console.log('nodes: '); console.dir(globalGraph.nodes())
       
@@ -202,6 +242,17 @@ function getSources(callback, i) {
   }
 }
 
+function initRadii() {
+  function radiusByEdges(nodeId) { 
+    return Math.log(globalGraph.nodeEdges(nodeId).length * 250) 
+  }
+
+  globalGraph.nodes().forEach(function(nodeId) {
+    globalGraph.node(nodeId).collapsedRadius = radiusByEdges(nodeId)
+    globalGraph.node(nodeId).radius = globalGraph.node(nodeId).collapsedRadius
+  })
+}
+
 function verifyDataLoad(callback) {
   if (Object.keys(sourceMap).length != globalGraph.nodes().length)
     console.warn('number of sources does not equal the number of nodes')
@@ -211,8 +262,10 @@ function verifyDataLoad(callback) {
   applyGraphFilter()
   applyRenames()
 
+  initRadii()
+
   console.log('data filters applied')
-  
+
   displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
 
   d3ForceLayoutInit()
@@ -357,7 +410,7 @@ function getOnwershipChain(id) {
 
 function addNodeToDisplay(id) {
   var node = globalGraph.node(id)
-  node.status = {} // for adding behavior that requirest node status
+  node.status = 'collapsed'
   displayGraph.setNode(id, node)  
 }
 
@@ -442,9 +495,12 @@ function fireGraphDisplay(nodeId) {
 
   d3Render(displayGraph)
 
+  expandNode(displayGraph.node(nodeId))
+
   var selector = '#node' + nodeId
   presentationSVG.select(selector).style('stroke', 'orange').style('stroke-width', '3.5px')
                                   .transition().duration(4000).style('stroke', '#fff').style('stroke-width', '1.5px')
+  
 }
 
 function initAwesomplete() {
@@ -543,17 +599,77 @@ function d3ForceLayoutInit() {
                          .charge(-150)
                          .size([presentationSVGWidth, presentationSVGHeight])
                          .on("tick", tick)
+
+  drag = forceLayout.drag()
+    .on('dragstart', function (d) { 
+      dragStart = {x: d.x, y: d.y}
+    })
+
+    .on('dragend', function (node) { 
+
+      // determine drag-end v.s. click, by mouse movement
+      // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
+      if (dragStart.x - node.x == 0 && dragStart.y - node.y == 0) {
+        console.log("click")
+        if (node.status === 'collapsed') expandNode(node)
+          else if (node.status === 'expanded') collapseNode(node)
+      }
+      else 
+        node.fixed = true
+    })
+}
+
+
+
+function avoidOverlaps() {
+
+  function collide(node) {
+    
+    //console.log('radius')
+    //console.log(node.x)
+    var r = node.radius + 16,
+        nx1 = node.x - r,
+        nx2 = node.x + r,
+        ny1 = node.y - r,
+        ny2 = node.y + r;
+    return function(quad, x1, y1, x2, y2) {
+      if (quad.point && (quad.point !== node)) {
+        var x = node.x - quad.point.x,
+            y = node.y - quad.point.y,
+            l = Math.sqrt(x * x + y * y),
+            r = node.radius + quad.point.radius
+        if (l < r) {
+          l = (l - r) / l * .5
+          node.x -= x *= l
+          node.y -= y *= l
+          quad.point.x += x
+          quad.point.y += y
+        }
+      }
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    }
+  }
+
+  var nodes = d3DataBind.nodesJson
+  var q = d3.geom.quadtree(nodes),
+      i = 0,
+      n = nodes.length;
+
+  while (++i < n) q.visit(collide(nodes[i]));
 }
 
 function tick(additionalConstraintFunc) {
 
   function keepWithinDisplayBounds() {
-    d3DisplayNodes.each(function(d){
-      radius = parseInt(d3.select(this).attr('r'))
-      if (d.x < radius) d.x = radius
-      if (d.y < radius) d.y = radius
-      if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
-      if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
+
+    d3DisplayNodes.each(function(g) { 
+      d3.select(this).select(".circle").each(function(d){
+        radius = parseInt(d3.select(this).attr('r')) // the use of d3 selections is superfluous if radius is included in the base data node already
+        if (d.x < radius) d.x = radius
+        if (d.y < radius) d.y = radius
+        if (d.x > presentationSVGWidth - radius) d.x = presentationSVGWidth - radius
+        if (d.y > presentationSVGHeight - radius) d.y = presentationSVGHeight - radius
+      })
     })
   }
 
@@ -579,9 +695,16 @@ function tick(additionalConstraintFunc) {
       return source + mid + target
     })
 
-
-    d3DisplayNodes.attr("cx", function(d) { count++; return d.x; })
+/*
+    d3DisplayNodes.each(function(g) { 
+                  d3.select(this).select(".circle")
+                  .attr("cx", function(d) { count++; return d.x; })
                   .attr("cy", function(d) { return d.y; })
+    })*/
+
+    d3DisplayNodes.attr("transform", function(d, i) {     
+        return "translate(" + d.x + "," + d.y + ")"; 
+    })
 
     d3ExtensionArcs.attr("d", function(edge) {
       //return "d","M 0 60 L 50 110 L 90 70 L 140 100"
@@ -606,10 +729,101 @@ function tick(additionalConstraintFunc) {
     //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
   }
 
-  keepWithinDisplayBounds()
+  avoidOverlaps()
+
+  //keepWithinDisplayBounds()
+
   if (typeof additionalConstraintFunc === 'function') additionalConstraintFunc()
+  
   syncView()
   // forceLayout.stop() // show dagre layout without really letting the force layout
+}
+
+function nodeColor(node) { 
+  if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
+  if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
+  if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
+  if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
+  if (node.kind == 'method')          
+    if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
+    else                              return d3.rgb('green')
+  if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
+  if (node.kind == 'package')         return d3.rgb('white').darker(2)
+}
+
+function expandNode(node) {
+  /*
+  var supershape = d3.superformula()
+                     .type("rectangle")
+                     .size(1000)
+                     .segments(3600);
+                     */
+
+  console.log("expanding node")
+
+  node.status = 'expanded'
+
+  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + 18
+  node.radius = expandedRadius
+  
+  var selector = '#node' + node.id
+  presentationSVG.select(selector).each(function(group) { 
+    var g = d3.select(this)
+    g.select(".circle")
+      .transition().duration(200).attr("r", node.radius) 
+      .each("end", function(node) {
+        var svgText = g.append("text")
+                        .style('font-size', '14px')
+                        .style("fill", "#fff")
+                        .style('stroke-width', '0px')
+                        .attr("text-anchor", "middle")
+                        .attr('alignment-baseline', "middle")
+                        .attr('y', -(node.textBbox.height/4))
+        
+        formattedText(node).forEach(function(line, i) {
+          svgText.append('tspan')
+                 .attr('x', 0)
+                 .attr('dy', function() {
+                   if (i == 0) return 0
+                   else return '1.2em'
+                 })
+                 .text(line)    
+        })
+    })
+  })
+  //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
+                 //.attr("class", "tooltip")
+
+  d3Render(displayGraph)
+
+}
+
+function collapseNode(node) {
+  /*
+  var supershape = d3.superformula()
+                     .type("rectangle")
+                     .size(1000)
+                     .segments(3600);
+                     */
+
+  console.log("collapsing node")
+
+  node.status = 'collapsed'
+  node.radius = node.collapsedRadius
+
+  var selector = '#node' + node.id
+  presentationSVG.select(selector).each(function(group) { 
+    var g = d3.select(this)
+    g.select("text").remove()
+    g.select(".circle")
+      .transition().duration(200).attr("r", node.radius) 
+  })
+  //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
+                 //.attr("class", "tooltip")
+
+
+  d3Render(displayGraph)
+
 }
 
 function d3Render(displayGraph) {
@@ -668,24 +882,16 @@ function d3Render(displayGraph) {
       .data(d3DataBind.nodesJson, function(node) { return node.id })
 
   d3DisplayNodes
-    .enter().append("circle")
-    .attr("class", "node")
+    .enter().append("g").attr("class", "node")
     .attr("id", function(node) { // for allowing indexed access
       return 'node' + node.id
     })
-    .attr("r", function(node) { return Math.log(globalGraph.nodeEdges(node.id).length * 250) })
-    .style("fill", function(node) { 
-      if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
-      if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
-      if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
-      if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
-      if (node.kind == 'method')          
-        if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
-        else                              return d3.rgb('green')
-      if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
-      if (node.kind == 'package')         return d3.rgb('white').darker(2)
-    })
-    .call(forceLayout.drag)
+    .call(drag)
+
+    .append("circle")
+    .attr("class", "circle")
+    .attr("r", function(node) { return node.radius })
+    .style("fill", nodeColor)
 
     .on('mousedown', function(node) {
       mouseDown = new Date()
@@ -695,8 +901,8 @@ function d3Render(displayGraph) {
     .on('mouseup', function(node) {
       mouseUp = new Date()
       if (mouseUp.getTime() - mouseDown.getTime() > 750) 
-        if (mouseDownCoords.x - node.x == 0 && mouseDownCoords.y - node.y == 0)
-          expandNode(node)
+        if (mouseDownCoords.x - node.x < 10 && mouseDownCoords.y - node.y < 10)
+          expandNodeObsolete(node)
     })
 
     .on('dblclick', function(node) {
@@ -713,17 +919,19 @@ function d3Render(displayGraph) {
       d3Render(displayGraph)
     })
 
-    .on('mouseover', function(node) {
+    .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
         presentationSVG.select(selector).transition().style('stroke-width', 3)
         // highlight its nodes
         var selector = '#node' + edge.v
-        presentationSVG.select(selector).transition().style('stroke', 'orange')
+        presentationSVG.select(selector).select(".circle").transition().style('stroke', 'orange')
         var selector = '#node' + edge.w
-        presentationSVG.select(selector).transition().style('stroke', 'orange')
+        presentationSVG.select(selector).select(".circle").transition().style('stroke', 'orange')
       }
+
+      //if (node.status === 'collapsed') expandNode(node)
     })
 
     .on('mouseout', function(node) {
@@ -733,18 +941,19 @@ function d3Render(displayGraph) {
         presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
         // highlight its nodes
         var selector = '#node' + edge.v
-        presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+        presentationSVG.select(selector).select(".circle").transition().style('stroke', '#fff').duration(1000)
         var selector = '#node' + edge.w
-        presentationSVG.select(selector).transition().style('stroke', '#fff').duration(1000)
+        presentationSVG.select(selector).select(".circle").transition().style('stroke', '#fff').duration(1000)
       }
+
+      //collapseNode(node)
     })
 
-  forceLayout.drag().on('dragstart', function (d) { 
-    dragStart = {x: d.x, y: d.y}
-  })
+    .append("title") // this is the default html tooltip definition
+      .attr("class", "tooltip")
+      .text(function(d) { return d.kind + ' ' + d.name })
 
-
-  function expandNode(node) {
+  function expandNodeObsolete(node) {
     var supershape = d3.superformula()
                        .type("rectangle")
                        .size(1000)
@@ -765,22 +974,6 @@ function d3Render(displayGraph) {
     //console.log('------------')
     //console.log(sourceMap[node.id])
   }
-
-  forceLayout.drag().on('dragend', function (d) { 
-
-    // determine drag-end v.s. click, by mouse movement
-    // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
-    if (dragStart.x - d.x == 0 && dragStart.y - d.y == 0) {
-      console.log("click")
-      //expandNode(d)
-    }
-    else 
-      d.fixed = true
-  })
-
-  d3DisplayNodes.append("title") // this is the default html tooltip definition
-      .attr("class", "tooltip")
-      .text(function(d) { return d.kind + ' ' + d.name; });
 
   //console.log(d3DataBind.nodesJson.length)
   //console.log(d3DataBind.nodesJson.length)
