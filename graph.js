@@ -554,7 +554,9 @@ function initAwesomplete() {
 
 function SetOrUpdateD3Data(displayGraph) {
   //
-  // transform the input graph to a d3 input graph as per the format:
+  // transform the input graph to a d3 input graph,
+  // such that d3 indexing is contiguous. Is that really a d3 required?
+  //
   //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
   //   https://github.com/mbostock/d3/wiki/Force-Layout#links
   //
@@ -753,13 +755,12 @@ function nodeColor(node) {
 
 function extendExpandedNodeEdges(node) {
 
+  // seems the api requires specifying the distance for each edge,
+  // without any option to keep some edges unchanged,
+  // so this is more tedious that it could have been.
   forceLayout.linkDistance(function (link) {
-    if (link.source == node || link.target == node) {
-      console.log(link.target)
-      return Math.max(20, displayGraph.node(link.source.id).radius + displayGraph.node(link.target.id).radius + 10)
-    }
-    else
-      return 20
+    //if (link.source == node || link.target == node)
+    return Math.max(20, displayGraph.node(link.source.id).radius + displayGraph.node(link.target.id).radius + 10)
   })
 }
 
