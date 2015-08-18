@@ -751,6 +751,18 @@ function nodeColor(node) {
   if (node.kind == 'package')         return d3.rgb('white').darker(2)
 }
 
+function extendExpandedNodeEdges(node) {
+
+  forceLayout.linkDistance(function (link) {
+    if (link.source == node || link.target == node) {
+      console.log(link.target)
+      return Math.max(20, displayGraph.node(link.source.id).radius + displayGraph.node(link.target.id).radius + 10)
+    }
+    else
+      return 20
+  })
+}
+
 function expandNode(node) {
   /*
   var supershape = d3.superformula()
@@ -765,6 +777,8 @@ function expandNode(node) {
 
   var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + 18
   node.radius = expandedRadius
+
+  extendExpandedNodeEdges(node)
   
   var selector = '#node' + node.id
   presentationSVG.select(selector).each(function(group) { 
