@@ -17,6 +17,8 @@ function windowResizeHandler() {
 
 }
 
+var sphereFontSize = 12 // implying pixel size
+
 var interactionState = {}
 
 console.log('viewport dimensions: ' + width + ', ' + height)
@@ -26,7 +28,7 @@ var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('heigh
 var svgText   = hiddenSVG.append('svg:text')
                          .attr('y', -500)
                          .attr('x', -500)
-                         .style('font-size', '12px')
+                         .style('font-size', sphereFontSize)
 
 var presentationSVG = d3.select('body').append('svg:svg')
   
@@ -122,17 +124,18 @@ var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
 function formattedText(node) {
 
-  function splitByLengthAndCamel(text) {
+  function splitByLengthAndCamelOrWord(text) {
     function isUpperCase(char) {
       return (char >= 'A' && char <= 'Z') // is this locale safe?
     }
 
     for (i = 0; i < text.length; i++)
     {
-      if (i > 0 && !isUpperCase(text.charAt(i-1))) 
-        if(isUpperCase(text.charAt(i)))
-          if (i > 3)
-            return [text.slice(0, i)].concat(splitByLengthAndCamel(text.slice(i)))
+      if (i > 0)
+        if ((!isUpperCase(text.charAt(i-1)) && isUpperCase(text.charAt(i))) || // camel case transition
+            text.charAt(i-1) == ' ')                                           // new word
+              if (i > 3)
+                return [text.slice(0, i)].concat(splitByLengthAndCamelOrWord(text.slice(i)))
 
       if (i == text.length-1) return [text]
     }
@@ -141,7 +144,7 @@ function formattedText(node) {
   //var text = [node.kind]
   var text = []
   
-  var splitName = splitByLengthAndCamel(node.name)
+  var splitName = splitByLengthAndCamelOrWord(node.name)
 
   splitName.forEach(function(line) {
     text.push(line)
@@ -649,7 +652,7 @@ function d3ForceLayoutInit() {
       // determine drag-end v.s. click, by mouse movement
       // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
       if (dragStart.x - node.x == 0 && dragStart.y - node.y == 0) {
-        console.log("click")
+        console.log("status on click: " + node.status)
         if (node.status === 'collapsed') expandNode(node)
           else if (node.status === 'expanded') collapseNode(node)
       }
@@ -753,10 +756,10 @@ function tick(additionalConstraintFunc) {
       //return "d","M 0 60 L 50 110 L 90 70 L 140 100"
       //return ('M ' + parseInt(edge.source.x -40) + ' ' + parseInt(edge.source.y) + ' ' +
       //        'L ' + parseInt(edge.source.x + 40) + ' ' + parseInt(edge.source.y))
-
-      return ('M' + (edge.source.x - 10) + ',' + (edge.source.y) + 
+      var edgeRadius = edge.source.radius * 1.3
+      return ('M' + (edge.source.x - edgeRadius) + ',' + (edge.source.y) + 
               ' A1,1 0 0 1 ' +
-              + (edge.source.x + 10) + ',' + (edge.source.y))
+              + (edge.source.x + edgeRadius) + ',' + (edge.source.y))
     })
     .attr('transform', function(edge) {
 
@@ -774,7 +777,7 @@ function tick(additionalConstraintFunc) {
 
   avoidOverlaps()
 
-  //keepWithinDisplayBounds()
+  keepWithinDisplayBounds()
 
   if (typeof additionalConstraintFunc === 'function') additionalConstraintFunc()
   
@@ -817,7 +820,9 @@ function expandNode(node) {
 
   node.status = 'expanded'
 
-  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + 18
+  // assign expanded radisu based on the bounding box needed for rendering the text,
+  // plus some padding of the same size as the active font size
+  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + sphereFontSize 
   node.radius = expandedRadius
 
   extendExpandedNodeEdges(node)
@@ -826,15 +831,16 @@ function expandNode(node) {
   presentationSVG.select(selector).each(function(group) { 
     var g = d3.select(this)
     g.select(".circle")
-      .transition().duration(200).attr("r", node.radius) 
+      .transition().duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
       .each("end", function(node) {
         var svgText = g.append("text")
-                        .style('font-size', '12px')
+                        .style('font-size', sphereFontSize)
                         .style("fill", "#fff")
                         .style('stroke-width', '0px')
                         .attr("text-anchor", "middle")
                         .attr('alignment-baseline', "middle")
                         .attr('y', -(node.textBbox.height/4))
+                        .style("cursor", "pointer")
         
         formattedText(node).forEach(function(line, i) {
           svgText.append('tspan')
@@ -955,7 +961,13 @@ function d3Render(displayGraph) {
     .attr("class", "circle")
     .attr("r", function(node) { return node.radius })
     .style("fill", nodeColor)
+    .style("cursor", "pointer")
 
+    .append("title") // this is the default html tooltip definition
+      .attr("class", "tooltip")
+      .text(function(d) { return d.kind + ' ' + d.name })
+
+  d3DisplayNodes
     .on('mousedown', function(node) {
       mouseDown = new Date()
       mouseDownCoords = {x: node.x, y: node.y}
@@ -1011,10 +1023,6 @@ function d3Render(displayGraph) {
 
       //collapseNode(node)
     })
-
-    .append("title") // this is the default html tooltip definition
-      .attr("class", "tooltip")
-      .text(function(d) { return d.kind + ' ' + d.name })
 
   function expandNodeObsolete(node) {
     var supershape = d3.superformula()
