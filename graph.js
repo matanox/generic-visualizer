@@ -19,7 +19,7 @@ function windowResizeHandler() {
 
 var sphereFontSize = 12 // implying pixel size
 
-var interactionState = {}
+var interactionState = {longStablePressEnd: false}
 
 console.log('viewport dimensions: ' + width + ', ' + height)
 
@@ -454,6 +454,12 @@ function addNodeToDisplay(id) {
   displayGraph.setNode(id, node)  
 }
 
+// add node neighbors and render them
+function addAndRenderNeighbors(graph, id, degree) {
+  addNodeNeighbors(displayGraph, node.id, 1)
+  d3Render(displayGraph)
+}
+
 // add node neighbors to display graph
 function addNodeNeighbors(graph, id, degree) {
   //console.log(id)
@@ -645,8 +651,8 @@ function d3ForceLayoutInit() {
   drag = forceLayout.drag()
 
     .on('dragstart', function (d) { 
-      dragStart = {x: d.x, y: d.y}
       dragStartMouseCoords = d3.mouse(presentationSVG.node())
+
       //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
     })
 
@@ -654,19 +660,18 @@ function d3ForceLayoutInit() {
       // determine drag-end v.s. click, by mouse movement
       // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
 
-      //if (dragStart.x - node.x == 0 && dragStart.y - node.y == 0) {
+      if (interactionState.longStablePressEnd) return
 
       dragEndMouseCoords = d3.mouse(presentationSVG.node())
 
-      if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) < 10 && 
-          Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) < 10) {
+      if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 && 
+          Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) == 0) {
         console.log("status on click: " + node.status)
         if (node.status === 'collapsed') expandNode(node)
           else if (node.status === 'expanded') collapseNode(node)
       }
       else {
         // fix the node on drag end
-        console.log('drag end')
         node.fixed = true
       }
     })
@@ -819,6 +824,14 @@ function extendExpandedNodeEdges(node) {
   })
 }
 
+function showSourceCode(node) {
+    
+    console.log('Source Code:')
+    console.log('------------')
+    console.log(sourceMap[node.id])
+}
+
+
 function expandNode(node) {
   /*
   var supershape = d3.superformula()
@@ -865,11 +878,7 @@ function expandNode(node) {
     })
   })
 
-  console.log('Source Code:')
-    console.log('------------')
-    console.log(sourceMap[node.id])
-  //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
-                 //.attr("class", "tooltip")
+  //showSourceCode(node)
 
   d3Render(displayGraph)
 
@@ -981,16 +990,22 @@ function d3Render(displayGraph) {
   d3DisplayNodes
     .on('mousedown', function(node) {
       mouseDown = new Date()
-      mouseDownRelativeCoords = d3.mouse(this)
+      mouseDownCoords = d3.mouse(presentationSVG.node())
+      interactionState.longStablePressEnd = false
     })
 
     .on('mouseup', function(node) {
       mouseUp = new Date()
-      mouseUpRelativeCoords = d3.mouse(this)
-      if (mouseUp.getTime() - mouseDown.getTime() > 750) 
-        if (Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
-            Math.abs(mouseUpRelativeCoords[1] - mouseDownRelativeCoords[1]) < 10)
+
+      mouseUpCoords = d3.mouse(presentationSVG.node())
+
+      if (mouseUp.getTime() - mouseDown.getTime() > 500) 
+        if (Math.abs(mouseUpCoords[0] - mouseDownCoords[0]) < 10 && 
+            Math.abs(mouseUpCoords[1] - mouseDownCoords[1]) < 10) {
+              interactionState.longStablePressEnd = true
               console.log('long stable click')
+              node.fixed = false
+        }
               //superShape(node)          
     })
 
@@ -1003,9 +1018,6 @@ function d3Render(displayGraph) {
       //console.log(node) 
 
       //console.log(displayGraph.nodes().length)
-      addNodeNeighbors(displayGraph, node.id, 1)
-      //console.log(displayGraph.nodes().length)
-      d3Render(displayGraph)
     })
 
     .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
