@@ -545,7 +545,7 @@ function fireGraphDisplay(nodeId) {
 
   var selector = '#node' + nodeId
   presentationSVG.select(selector).style('stroke', 'orange').style('stroke-width', '3.5px')
-                                  .transition().duration(4000).style('stroke', '#fff').style('stroke-width', '1.5px')
+                                  .transition('nodeResizing').duration(4000).style('stroke', '#fff').style('stroke-width', '1.5px')
   
 }
 
@@ -855,7 +855,7 @@ function expandNode(node) {
   presentationSVG.select(selector).each(function(group) { 
     var g = d3.select(this)
     g.select(".circle")
-      .transition().duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
+      .transition('nodeResizing').duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
       .each("end", function(node) {
         var svgText = g.append("text")
                         .style('font-size', sphereFontSize)
@@ -903,7 +903,7 @@ function collapseNode(node) {
     var g = d3.select(this)
     g.selectAll("text").remove()
     g.select(".circle")
-      .transition().duration(400).attr("r", node.radius) 
+      .transition('nodeResizing').duration(400).attr("r", node.radius) 
   })
   //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
                  //.attr("class", "tooltip")
