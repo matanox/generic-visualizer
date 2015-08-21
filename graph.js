@@ -26,7 +26,7 @@ var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('heigh
 var svgText   = hiddenSVG.append('svg:text')
                          .attr('y', -500)
                          .attr('x', -500)
-                         .style('font-size', '14px')
+                         .style('font-size', '12px')
 
 var presentationSVG = d3.select('body').append('svg:svg')
   
@@ -162,7 +162,7 @@ function calcBBox(node) {
   return svgText.node().getBBox()
 }
 
-function getNodes(callback){
+function loadNodes(callback){
   console.log('loading nodes')
   d3.csv('cae-data/nodes', function(err, inputNodes) {
     if (err) console.error(err)
@@ -186,26 +186,13 @@ function getNodes(callback){
   })
 }
 
-function postProcessInput(edge){
-  // make an 'owned by' edge equivalent to a 'declares member' edge
-  // the nature of the real-world difference will be sorted out by using this
-  // code, but as it currently stands they are considered just the same here.
-  // in the end, this will be handled in the Scala code itself
-  if (edge.edgeKind == 'owned by') {
-    t = edge.id1; edge.id1 = edge.id2; edge.id2 = t; // swap edge's direction
-    edge.edgeKind = 'declares member'
-  }
-}
-
-function getEdges(callback){
+function loadEdges(callback){
   console.log('loading edges')
   d3.csv('cae-data/edges', function(err, inputEdges) {
     if (err) console.error(err)
     else {
       console.log('input edges: '); console.dir(inputEdges)
       inputEdges.forEach(function(edge) {
-        // TODO: get bounding box size required for rendering the label 
-        postProcessInput(edge)
         globalGraph.setEdge(edge.id1, edge.id2, { edgeKind: edge.edgeKind });
       })
       console.log('edges: '); console.dir(globalGraph.edges())
@@ -253,14 +240,15 @@ function initRadii() {
   })
 }
 
-function verifyDataLoad(callback) {
+function onDataLoaded(callback) {
   if (Object.keys(sourceMap).length != globalGraph.nodes().length)
     console.warn('number of sources does not equal the number of nodes')
 
   console.log('data loading done')
 
-  applyGraphFilter()
-  applyRenames()
+  applyGraphFilters()
+  
+  dataEmbelish()
 
   initRadii()
 
@@ -350,26 +338,75 @@ function filterByChain(chain, graph) {
 //
 // filter out non-informative nodes from the global graph
 //
-function applyGraphFilter() {
-  nodesBefore = globalGraph.nodes().length
-  edgesBefore = globalGraph.edges().length
-  
-  for (exclusion of packageExcludeList) {
-    filterByChain(exclusion.chain, globalGraph)
+function applyGraphFilters() {
+
+  // this may ultimately go to a separate output file for easy audit and/or test enablement
+  function logInputGraphPreprocessing(text) {
+    console.log(text)
   }
 
-  nodesAfter = globalGraph.nodes().length
-  edgesAfter = globalGraph.edges().length
+  // filter away everything in certain external packages, other than their usage itself 
+  // made in the project's code
+  function filterExternalPackageChains() {
+    nodesBefore = globalGraph.nodes().length
+    edgesBefore = globalGraph.edges().length
+    
+    for (exclusion of packageExcludeList) {
+      filterByChain(exclusion.chain, globalGraph)
+    }
 
-  console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') + 
-              ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' + 
-               parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
+    nodesAfter = globalGraph.nodes().length
+    edgesAfter = globalGraph.edges().length
+
+    console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') + 
+                ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' + 
+                 parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
+  }
+
+  // The compiler creates default anonymous methods for copying the arguments passed
+  // to a case class. They do not convey any useful information, hence filtered.
+  function filterCaseClassDefaultCopiers() {
+    globalGraph.nodes().forEach(function(nodeId) {
+      var node = globalGraph.node(nodeId)
+      if (node.kind == 'method' && node.name.indexOf('copy$default') == 0)
+
+        logInputGraphPreprocessing('removing case class default copier ' + node.name + ' (and its edge)')
+
+        //globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
+        //globalGraph.removeNode(nodeId)
+
+    })
+  }
+
+  filterExternalPackageChains()
+  filterCaseClassDefaultCopiers()
 }
+//
+// embelish the graph with more humane node names for special cases, and the like
+//
+function dataEmbelish() {
 
-//
-// rename nodes in the global graph
-//
-function applyRenames() {
+  function ownerShipNormalize(edge){
+    // make an 'owned by' edge equivalent to a 'declares member' edge
+    // the nature of the real-world difference will be sorted out by using this
+    // code, but as it currently stands they are considered just the same here.
+    // in the end, this will be handled in the Scala code itself
+    if (globalGraph.edge(edge).edgeKind == 'owned by') {
+      t = edge.id1; edge.id1 = edge.id2; edge.id2 = t; // swap edge's direction
+      globalGraph.edge(edge).edgeKind = 'declares member'
+    }
+  }
+
+  function embelishAnonymousClass(nodeId) {
+    var node = globalGraph.node(nodeId)
+    if (node.kind == 'anonymous class' && node.name == '$anon')
+      node.name = 'unnamed class'
+  }
+
+  globalGraph.edges().forEach(ownerShipNormalize)
+
+  globalGraph.nodes().forEach(embelishAnonymousClass)
+
   globalGraph.nodes().forEach(function(nodeId){
     if (globalGraph.node(nodeId).name.indexOf('$') > 0) console.log(globalGraph.node(nodeId).name)
   })
@@ -377,7 +414,7 @@ function applyRenames() {
 
 function fetchData(callback) {
   // callback-hell-style flow control for all data loading
-  getNodes(function(){getEdges(verifyDataLoad)})
+  loadNodes(function(){loadEdges(onDataLoaded)})
 }
 
 fetchData() 
@@ -480,7 +517,7 @@ function computeCirclePack(hierarchy) {
 
 // compute circle graph
 function fireGraphDisplay(nodeId) {
-  displayGraph = getNodeEnvGraph(nodeId,1)
+  displayGraph = getNodeEnvGraph(nodeId,2)
   displayGraph.setGraph({})
   //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
                                // not bound to the window's viewport but may
@@ -596,7 +633,7 @@ function d3ForceLayoutInit() {
   presentationSVG.append("g").attr("class", "nodes") 
 
   forceLayout = d3.layout.force()
-                         .gravity(0.5)
+                         .gravity(0.4)
                          .linkDistance(20)
                          .charge(-150)
                          .size([presentationSVGWidth, presentationSVGHeight])
@@ -622,7 +659,11 @@ function d3ForceLayoutInit() {
 }
 
 
-
+//
+// given that we already reset the edges's length such 
+// expanded nodes cannot overlap their conncections,
+// is this still necessary?
+//
 function avoidOverlaps() {
 
   function collide(node) {
@@ -788,7 +829,7 @@ function expandNode(node) {
       .transition().duration(200).attr("r", node.radius) 
       .each("end", function(node) {
         var svgText = g.append("text")
-                        .style('font-size', '14px')
+                        .style('font-size', '12px')
                         .style("fill", "#fff")
                         .style('stroke-width', '0px')
                         .attr("text-anchor", "middle")
@@ -806,6 +847,10 @@ function expandNode(node) {
         })
     })
   })
+
+  console.log('Source Code:')
+    console.log('------------')
+    console.log(sourceMap[node.id])
   //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
                  //.attr("class", "tooltip")
 
@@ -860,6 +905,7 @@ function d3Render(displayGraph) {
       .style("stroke", function(edge) { 
         if (edge.edgeKind == 'declares member') return d3.rgb('white').darker(2)
         if (edge.edgeKind == 'extends')         return d3.rgb('blue')
+        if (edge.edgeKind == 'is of type')      return d3.rgb('blue')
         if (edge.edgeKind == 'uses')            return d3.rgb('green')
       })
       .attr("marker-mid", function(edge) {
@@ -871,12 +917,14 @@ function d3Render(displayGraph) {
       .attr("stroke-dasharray", function(edge) {
         if (edge.edgeKind == 'declares member') return "none"
         if (edge.edgeKind == 'extends')         return "4,3"
+        if (edge.edgeKind == 'is of type')      return "4,3"
         if (edge.edgeKind == 'uses')            return "none"
       })
 
 
   var extendEdges = d3DataBind.linksJson.filter(function(edge) { 
-    if (edge.edgeKind == 'extends') return true
+    if (edge.edgeKind == 'extends')    return true
+    if (edge.edgeKind == 'is of type') return true
     return false
   })
       
@@ -985,9 +1033,9 @@ function d3Render(displayGraph) {
     console.log(node)                   
     console.log(supershape)
 
-    //console.log('Source Code:')
-    //console.log('------------')
-    //console.log(sourceMap[node.id])
+    console.log('Source Code:')
+    console.log('------------')
+    console.log(sourceMap[node.id])
   }
 
   //console.log(d3DataBind.nodesJson.length)
