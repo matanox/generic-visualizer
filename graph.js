@@ -643,21 +643,32 @@ function d3ForceLayoutInit() {
                          .on("tick", tick)
 
   drag = forceLayout.drag()
+
     .on('dragstart', function (d) { 
       dragStart = {x: d.x, y: d.y}
+      dragStartMouseCoords = d3.mouse(presentationSVG.node())
+      //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
     })
 
     .on('dragend', function (node) { 
-
       // determine drag-end v.s. click, by mouse movement
       // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
-      if (dragStart.x - node.x == 0 && dragStart.y - node.y == 0) {
+
+      //if (dragStart.x - node.x == 0 && dragStart.y - node.y == 0) {
+
+      dragEndMouseCoords = d3.mouse(presentationSVG.node())
+
+      if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) < 10 && 
+          Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) < 10) {
         console.log("status on click: " + node.status)
         if (node.status === 'collapsed') expandNode(node)
           else if (node.status === 'expanded') collapseNode(node)
       }
-      else 
+      else {
+        // fix the node on drag end
+        console.log('drag end')
         node.fixed = true
+      }
     })
 }
 
@@ -970,14 +981,17 @@ function d3Render(displayGraph) {
   d3DisplayNodes
     .on('mousedown', function(node) {
       mouseDown = new Date()
-      mouseDownCoords = {x: node.x, y: node.y}
+      mouseDownRelativeCoords = d3.mouse(this)
     })
 
     .on('mouseup', function(node) {
       mouseUp = new Date()
+      mouseUpRelativeCoords = d3.mouse(this)
       if (mouseUp.getTime() - mouseDown.getTime() > 750) 
-        if (mouseDownCoords.x - node.x < 10 && mouseDownCoords.y - node.y < 10)
-          expandNodeObsolete(node)
+        if (Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
+            Math.abs(mouseUpRelativeCoords[1] - mouseDownRelativeCoords[1]) < 10)
+              console.log('long stable click')
+              //superShape(node)          
     })
 
     .on('dblclick', function(node) {
@@ -1024,7 +1038,7 @@ function d3Render(displayGraph) {
       //collapseNode(node)
     })
 
-  function expandNodeObsolete(node) {
+  function superShape(node) {
     var supershape = d3.superformula()
                        .type("rectangle")
                        .size(1000)
