@@ -865,6 +865,7 @@ function expandNode(node) {
                         .attr('alignment-baseline', "middle")
                         .attr('y', -(node.textBbox.height/4))
                         .style("cursor", "pointer")
+                        .attr('pointer-events', 'none')
         
         formattedText(node).forEach(function(line, i) {
           svgText.append('tspan')
@@ -900,9 +901,9 @@ function collapseNode(node) {
   var selector = '#node' + node.id
   presentationSVG.select(selector).each(function(group) { 
     var g = d3.select(this)
-    g.select("text").remove()
+    g.selectAll("text").remove()
     g.select(".circle")
-      .transition().duration(200).attr("r", node.radius) 
+      .transition().duration(400).attr("r", node.radius) 
   })
   //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
                  //.attr("class", "tooltip")
@@ -1020,31 +1021,39 @@ function d3Render(displayGraph) {
       //console.log(displayGraph.nodes().length)
     })
 
+    //
+    // mouse over and mouse out events use a named transition (see https://gist.github.com/mbostock/24bdd02df2a72866b0ec)
+    // in order to both not collide with other events' transitions, such as the click transitions, 
+    // and to cancel each other per.
+    // 
+
     .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
+      console.log('mouseover')
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
         presentationSVG.select(selector).transition().style('stroke-width', 3)
         // highlight its nodes
         var selector = '#node' + edge.v
-        presentationSVG.select(selector).select(".circle").transition().style('stroke', 'orange')
+        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', 'orange')
         var selector = '#node' + edge.w
-        presentationSVG.select(selector).select(".circle").transition().style('stroke', 'orange')
+        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', 'orange')
       }
 
       //if (node.status === 'collapsed') expandNode(node)
     })
 
     .on('mouseout', function(node) {
+      console.log('mouseout')
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
         presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
         // highlight its nodes
         var selector = '#node' + edge.v
-        presentationSVG.select(selector).select(".circle").transition().style('stroke', '#fff').duration(1000)
+        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', '#fff').duration(1000)
         var selector = '#node' + edge.w
-        presentationSVG.select(selector).select(".circle").transition().style('stroke', '#fff').duration(1000)
+        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', '#fff').duration(1000)
       }
 
       //collapseNode(node)
