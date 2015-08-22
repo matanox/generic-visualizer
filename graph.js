@@ -32,8 +32,21 @@ var sphereFontSize = 12 // implying pixel size
 
 var interactionState = {
                          longStablePressEnd: false,
-                         ctrlDown: false
+                         ctrlDown: false,
+                         searchDialogEnabled: false
                        }
+
+var awesompleteContainerDiv = document.getElementById("awesompleteContainer")
+
+function searchDialogDisable() {
+  interactionState.searchDialogEnabled = false
+  awesompleteContainerDiv.style.visibility = 'hidden'
+}      
+
+function searchDialogEnable() {
+  interactionState.searchDialogEnabled = true
+  awesompleteContainerDiv.style.visibility = 'visible'
+}
 
 function isAlphaNumeric(keyCode) {
   return ((keyCode >= 65 && keyCode <= 90)  ||
@@ -44,8 +57,8 @@ function isAlphaNumeric(keyCode) {
 document.onkeypress = function(evt) {
   console.log(evt.keyCode)
   if (isAlphaNumeric(evt.keyCode)) {
-    console.log(inputBar)
-    document.getElementById("awesompleteContainer").style.visibility = 'visible'
+    interactionState.searchDialogEnabled = true
+    searchDialogEnable()
     document.getElementById('inputBar').focus()
   }
 }
@@ -54,6 +67,12 @@ document.onkeydown = function(evt) {
   if (evt.keyCode == 17) {
     interactionState.ctrlDown = true
   }
+
+  if (evt.keyCode == 27) { // the escape key
+    if (interactionState.searchDialogEnabled)
+      searchDialogDisable()
+  }
+
 }
 
 document.onkeyup = function(evt) {
@@ -631,12 +650,11 @@ function initAwesomplete() {
 
       this.input.value = ''
 
-      document.getElementById("awesompleteContainer").style.visibility = 'hidden'
+      searchDialogDisable()
     }
   })
 
   function initAwesomepleteDisplay() {
-    var awesompleteContainerDiv = document.getElementById("awesompleteContainer")
     awesompleteContainerDiv.style.width = '60%'
     awesompleteContainerDiv.style.margin = '5% 0% 20% 20%'
 
@@ -645,7 +663,8 @@ function initAwesomplete() {
 
     inputBar.style.width  = '100%'
 
-    awesompleteContainerDiv.style.visibility = 'visible'
+    searchDialogEnable()
+
   }; initAwesomepleteDisplay()
 
   window.addEventListener("awesomplete-selectcomplete", function(e) {
