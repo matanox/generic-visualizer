@@ -19,7 +19,37 @@ function windowResizeHandler() {
 
 var sphereFontSize = 12 // implying pixel size
 
-var interactionState = {longStablePressEnd: false}
+var interactionState = {
+                         longStablePressEnd: false,
+                         ctrlDown: false
+                       }
+
+function isAlphaNumeric(keyCode) {
+  return ((keyCode >= 65 && keyCode <= 90)  ||
+          (keyCode >= 97 && keyCode <= 122) ||
+          (keyCode >= 48 && keyCode <= 57))
+}
+
+document.onkeypress = function(evt) {
+  console.log(evt.keyCode)
+  if (isAlphaNumeric(evt.keyCode)) {
+    console.log(inputBar)
+    document.getElementById('inputBar').focus()
+  }
+}
+
+document.onkeydown = function(evt) {
+  if (evt.keyCode == 17) {
+    interactionState.ctrlDown = true
+  }
+}
+
+document.onkeyup = function(evt) {
+  if (evt.keyCode == 17) {
+    interactionState.ctrlDown - false
+  }
+}
+
 
 console.log('viewport dimensions: ' + width + ', ' + height)
 
@@ -1142,28 +1172,3 @@ function nodeEdgesByEdgeKind(nodeID, edgeKind) {
       })
 }
 
-function parentChain(nodeID) {}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-// can use non SVG maybe https://developer.mozilla.org/en/docs/Web/API/Element/getBoundingClientRect
-// but with SVG it is simple to draw invisibly outside the page
-
-globalGraph.edges().forEach(function(edge){
-  if (globalGraph.edge(edge.v, edge.w).edgeKind == 'owned by') console.log('bad')
-})
-
-
-
-ownershipChainMap = {}
-function getNodeOnwershipChain(id) {
-  'use strict'
-  let node = globalGraph.node(id)
-  globalGraph.nodeEdges(id).forEach(function(edge) {
-    if (edge.w == id && globalGraph.edge(edge).edgeKind == 'declares member') {
-      let owner = edge.v
-      console.log('owner: '); console.log(globalGraph.node(owner))
-      getNodeOnwershipChain(owner)
-    }
-  })
-}
