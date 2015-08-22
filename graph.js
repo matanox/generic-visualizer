@@ -39,6 +39,7 @@ var interactionState = {
 var awesompleteContainerDiv = document.getElementById("awesompleteContainer")
 
 function searchDialogDisable() {
+  document.getElementById('inputBar').value = ''
   interactionState.searchDialogEnabled = false
   awesompleteContainerDiv.style.visibility = 'hidden'
 }      
@@ -647,8 +648,6 @@ function initAwesomplete() {
 
       console.log('user selected ' + text)
       fireGraphDisplay(id)
-
-      this.input.value = ''
 
       searchDialogDisable()
     }
