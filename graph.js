@@ -589,27 +589,40 @@ function computeCirclePack(hierarchy) {
 
 // compute circle graph
 function fireGraphDisplay(nodeId) {
-  displayGraph = getNodeEnvGraph(nodeId,2)
-  displayGraph.setGraph({})
-  //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
-                               // not bound to the window's viewport but may
-                               // be much much larger.
 
   console.log(displayGraph)
-  console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
-  console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
-  console.log('layout computed')
+  console.log(displayGraph.node(nodeId))
+  if (displayGraph.node(nodeId) === undefined) {
+    console.log('not yet defined')
+    displayGraph = getNodeEnvGraph(nodeId,2) // TODO: is this a memory leak?
+    displayGraph.setGraph({})
 
-  computeCirclePack(makeHierarchyChain(nodeId)) // we don't do anything with it right now
+    //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
+                                 // not bound to the window's viewport but may
+                                 // be much much larger.
 
-  d3Render(displayGraph)
+    console.log(displayGraph)
+    console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
+    console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
+    console.log('layout computed')
+
+    // computeCirclePack(makeHierarchyChain(nodeId)) // we don't do anything with it right now
+
+    d3Render(displayGraph)
+  }
+
+  // do the following both whether the node was already on the display or not
 
   var selector = '#node' + nodeId
   presentationSVG.select(selector).select(".circle").style('stroke', 'orange').style('stroke-width', 3)
                                   .transition('mouseOvership').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
 
-  expandNode(displayGraph.node(nodeId))
-
+  var node = displayGraph.node(nodeId)
+  console.log(node.status)
+  if (node.status === 'collapsed') {
+    console.log('about to expand')
+    expandNode(node)
+  }
 }
 
 function initAwesomplete() {
@@ -647,6 +660,7 @@ function initAwesomplete() {
       var node = globalGraph.node(id)
 
       console.log('user selected ' + text)
+      
       fireGraphDisplay(id)
 
       searchDialogDisable()
@@ -1098,7 +1112,7 @@ function d3Render(displayGraph) {
     // 
 
     .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
-      console.log('mouseover')
+      //console.log('mouseover')
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
@@ -1114,7 +1128,7 @@ function d3Render(displayGraph) {
     })
 
     .on('mouseout', function(node) {
-      console.log('mouseout')
+      //console.log('mouseout')
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
@@ -1163,18 +1177,22 @@ function d3Render(displayGraph) {
   })
 }
 
-function filterEntryPoints(graph) {
+function listUnusedTypes(graph) {
   var entryPoints = []
   graph.nodes().forEach(function(nodeId) {
-    var used = false
-    graph.nodeEdges(nodeId).forEach(function(edge) {
-      if (edge.w == nodeId) {
-        if (graph.edge(edge).edgeKind == 'extends')    used = true
-        if (graph.edge(edge).edgeKind == 'is of type') used = true
-        if (graph.edge(edge).edgeKind == 'uses')       used = true
-      }
-    })
-    if (!used) entryPoints.push(nodeId)
+    if (graph.node(nodeId).kind == 'class'  || 
+        graph.node(nodeId).kind == 'object' ||
+        graph.node(nodeId).kind == 'object') {
+          var used = false
+          graph.nodeEdges(nodeId).forEach(function(edge) {
+            if (edge.w == nodeId) {
+              if (graph.edge(edge).edgeKind == 'extends')    used = true
+              if (graph.edge(edge).edgeKind == 'is of type') used = true
+              //if (graph.edge(edge).edgeKind == 'uses')       used = true
+            }
+          })
+          if (!used) entryPoints.push(nodeId)
+        }
   })
   console.log(entryPoints.length)
   console.log(graph.nodes().length)
