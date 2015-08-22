@@ -10,13 +10,14 @@ function windowResizeHandler() {
   height = window.innerHeight
 
   //
-  // Chrome may add an extra pixel upon zoom, which may
-  // introduce either of the axis scroll bars, which will reduce 
-  // the viewport forcing the complementary scroll bar being necessary,
-  // thus cascading into both scroll bars being necessarily visible,
-  // wasting a lot of viewport space and attention for just one pixel.
+  // Chrome may add an extra pixel beyond the screen dimension on either axis, upon zoom, 
+  // which may directly require either one of the axis scroll bars, that in turn will
+  // by definition reduce the viewport, thus forcing the complementary scroll bar 
+  // becoming necessary as well, thus cascading into both scroll bars being 
+  // necessarily visible, wasting a lot of viewport space and attention for just one pixel.
   //
-  // We bypass all that by using one pixel less than what the viewport size initially is.
+  // We bypass all that by using one pixel less than what the viewport size initially is -
+  // in both axis dimensions.b
   //
 
   presentationSVGWidth = width -1   
@@ -44,7 +45,7 @@ document.onkeypress = function(evt) {
   console.log(evt.keyCode)
   if (isAlphaNumeric(evt.keyCode)) {
     console.log(inputBar)
-    document.getElementById('inputBar').style.visibility = 'visible'
+    document.getElementById("awesompleteContainer").style.visibility = 'visible'
     document.getElementById('inputBar').focus()
   }
 }
@@ -630,9 +631,22 @@ function initAwesomplete() {
 
       this.input.value = ''
 
-      inputBar.style.visibility = 'hidden'
+      document.getElementById("awesompleteContainer").style.visibility = 'hidden'
     }
   })
+
+  function initAwesomepleteDisplay() {
+    var awesompleteContainerDiv = document.getElementById("awesompleteContainer")
+    awesompleteContainerDiv.style.width = '60%'
+    awesompleteContainerDiv.style.margin = '5% 0% 20% 20%'
+
+    var awesompleteAutoDiv = document.getElementsByClassName("awesomplete")[0]
+    awesompleteAutoDiv.style.width  = '100%'
+
+    inputBar.style.width  = '100%'
+
+    awesompleteContainerDiv.style.visibility = 'visible'
+  }; initAwesomepleteDisplay()
 
   window.addEventListener("awesomplete-selectcomplete", function(e) {
     // User made a selection from dropdown. 
