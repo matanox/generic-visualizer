@@ -590,11 +590,9 @@ function computeCirclePack(hierarchy) {
 // compute circle graph
 function fireGraphDisplay(nodeId) {
 
-  console.log(displayGraph)
-  console.log(displayGraph.node(nodeId))
   if (displayGraph.node(nodeId) === undefined) {
     console.log('not yet defined')
-    displayGraph = getNodeEnvGraph(nodeId,2) // TODO: is this a memory leak?
+    displayGraph = getNodeEnvGraph(nodeId,1) // TODO: is this a memory leak?
     displayGraph.setGraph({})
 
     //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
@@ -618,11 +616,7 @@ function fireGraphDisplay(nodeId) {
                                   .transition('mouseOvership').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
 
   var node = displayGraph.node(nodeId)
-  console.log(node.status)
-  if (node.status === 'collapsed') {
-    console.log('about to expand')
-    expandNode(node)
-  }
+  if (node.status === 'collapsed') expandNode(node)
 }
 
 function initAwesomplete() {
