@@ -571,12 +571,12 @@ function fireGraphDisplay(nodeId) {
 
   d3Render(displayGraph)
 
+  var selector = '#node' + nodeId
+  presentationSVG.select(selector).select(".circle").style('stroke', 'orange').style('stroke-width', 3)
+                                  .transition('mouseOvership').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
+
   expandNode(displayGraph.node(nodeId))
 
-  var selector = '#node' + nodeId
-  presentationSVG.select(selector).style('stroke', 'orange').style('stroke-width', '3.5px')
-                                  .transition('nodeResizing').duration(4000).style('stroke', '#fff').style('stroke-width', '1.5px')
-  
 }
 
 function initAwesomplete() {
@@ -863,12 +863,6 @@ function showSourceCode(node) {
 
 
 function expandNode(node) {
-  /*
-  var supershape = d3.superformula()
-                     .type("rectangle")
-                     .size(1000)
-                     .segments(3600);
-                     */
 
   console.log("expanding node")
 
@@ -1121,4 +1115,22 @@ function d3Render(displayGraph) {
   forceLayout.on("end", function() {
     console.log('layout stable')
   })
+}
+
+function filterEntryPoints(graph) {
+  var entryPoints = []
+  graph.nodes().forEach(function(nodeId) {
+    var used = false
+    graph.nodeEdges(nodeId).forEach(function(edge) {
+      if (edge.w == nodeId) {
+        if (graph.edge(edge).edgeKind == 'extends')    used = true
+        if (graph.edge(edge).edgeKind == 'is of type') used = true
+        if (graph.edge(edge).edgeKind == 'uses')       used = true
+      }
+    })
+    if (!used) entryPoints.push(nodeId)
+  })
+  console.log(entryPoints.length)
+  console.log(graph.nodes().length)
+  return entryPoints
 }
