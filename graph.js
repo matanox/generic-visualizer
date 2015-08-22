@@ -6,12 +6,22 @@ var presentationSVGWidth
 var presentationSVGHeight
 
 function windowResizeHandler() {
-  width = document.body.clientWidth
-  height = document.body.scrollHeight
+  width = window.innerWidth
+  height = window.innerHeight
 
-  presentationSVGWidth = width
-  presentationSVGHeight = height - 100
+  //
+  // Chrome may add an extra pixel upon zoom, which may
+  // introduce either of the axis scroll bars, which will reduce 
+  // the viewport forcing the complementary scroll bar being necessary,
+  // thus cascading into both scroll bars being necessarily visible,
+  // wasting a lot of viewport space and attention for just one pixel.
+  //
+  // We bypass all that by using one pixel less than what the viewport size initially is.
+  //
 
+  presentationSVGWidth = width -1   
+  presentationSVGHeight = height -1 
+ 
   presentationSVG.attr('width', presentationSVGWidth)
                  .attr('height', presentationSVGHeight)
 
@@ -34,6 +44,7 @@ document.onkeypress = function(evt) {
   console.log(evt.keyCode)
   if (isAlphaNumeric(evt.keyCode)) {
     console.log(inputBar)
+    document.getElementById('inputBar').style.visibility = 'visible'
     document.getElementById('inputBar').focus()
   }
 }
@@ -55,12 +66,13 @@ console.log('viewport dimensions: ' + width + ', ' + height)
 
 // create svg for working out dimensions necessary for rendering labels' text
 var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('height', 0)
+
 var svgText   = hiddenSVG.append('svg:text')
                          .attr('y', -500)
                          .attr('x', -500)
                          .style('font-size', sphereFontSize)
 
-var presentationSVG = d3.select('body').append('svg:svg')
+var presentationSVG = d3.select('body').append('svg:svg').style('position', 'aboslute').style('z-index', 0)
   
 windowResizeHandler()
 
@@ -616,7 +628,9 @@ function initAwesomplete() {
       console.log('user selected ' + text)
       fireGraphDisplay(id)
 
-      this.input.value = text
+      this.input.value = ''
+
+      inputBar.style.visibility = 'hidden'
     }
   })
 
