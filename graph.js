@@ -801,7 +801,7 @@ function initAwesomplete() {
             if (a.data.name > b.data.name) return 1
             return 0
           },
-    replace: function(text) {
+    replace: function(text) { // gathers the node id of the selection
       var id = text.substring(text.indexOf('(') + 1, text.indexOf(')'))
       var node = globalGraph.node(id)
 
