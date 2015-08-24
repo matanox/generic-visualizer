@@ -78,7 +78,7 @@ document.onkeydown = function(evt) {
 
 document.onkeyup = function(evt) {
   if (evt.keyCode == 17) {
-    interactionState.ctrlDown - false
+    interactionState.ctrlDown = false
   }
 }
 
@@ -124,33 +124,83 @@ var fisheye = d3.fisheye.circular()
     .radius(100)
     .distortion(5);
 
-// arrow-head svg definition
-function setUsesShape(length, ratio) {
+function setSvgDefs() {
+  var svgDefSection = presentationSVG.append("svg:defs")
 
-  var shortEdgeLength = length * ratio
+  // arrow-head svg definition
+  function setUsesShapeDef(length, ratio) {
 
-  var path = 'M0,0' + 
-             'L0,' + shortEdgeLength +
-             'L' + length + ',' + (shortEdgeLength/2) +
-             'L0,0'
+    var shortEdgeLength = length * ratio
 
+    var path = 'M0,0' + 
+               'L0,' + shortEdgeLength +
+               'L' + length + ',' + (shortEdgeLength/2) +
+               'L0,0'
 
-  presentationSVG.append("svg:defs").selectAll("marker")
-      .data(["arrow"])      
-    .enter().append("svg:marker")
-      .attr("id", "arrow")
-      .attr("refX", 0) 
-      .attr("refY", shortEdgeLength/2)
-      .attr("markerWidth", length)
-      .attr("markerHeight", shortEdgeLength)
-      .attr("markerUnits", "userSpaceOnUse") 
-      //.attr("markerUnits", "strokeWidth")
-      .attr("orient", "auto")
-    .append("svg:path")
-      .attr("d", path)
-      .style("fill", d3.rgb('green'))      
-}; setUsesShape(10, 0.5)
+    svgDefSection.selectAll("marker")
+        .data(["arrow"])      
+      .enter().append("svg:marker")
+        .attr("id", "arrow")
+        .attr("refX", 0) 
+        .attr("refY", shortEdgeLength/2)
+        .attr("markerWidth", length)
+        .attr("markerHeight", shortEdgeLength)
+        .attr("markerUnits", "userSpaceOnUse") 
+        //.attr("markerUnits", "strokeWidth")
+        .attr("orient", "auto")
+      .append("svg:path")
+        .attr("d", path)
+        .style("fill", d3.rgb('green'))      
+  }; setUsesShapeDef(10, 0.5)
 
+  function setMyRadialGradientDef() {
+
+    var gradientDef = svgDefSection
+                     .selectAll("MyRadialGradientDef").data(["MyRadialGradientDef"]).enter().append("svg:radialGradient")
+                     .attr("id", "MyRadialGradientDef")
+
+    gradientDef
+    .append("svg:stop")
+      .attr('offset', '0%')
+      .attr('stop-color', 'white')
+
+    gradientDef
+    .append("svg:stop")
+      .attr('offset', '90%')
+      .attr('stop-color', 'orange')
+
+    gradientDef
+    .append("svg:stop")
+      .attr('offset', '100%')
+      .attr('stop-color', 'red')
+
+  }; setMyRadialGradientDef()
+
+  function setMyLinearGradientDef() {
+
+    var gradientDef = svgDefSection
+                     .selectAll("MyLinearGradientDef").data(["MyLinearGradientDef"]).enter().append("svg:linearGradient")
+                     .attr("id", "MyLinearGradientDef")
+
+    gradientDef
+    .attr('x1', '0')
+    .attr('y1', '1')
+    .attr('x2', '0')
+    .attr('y2', '0')
+
+    gradientDef
+    .append("svg:stop")
+      .attr('offset', '50%')
+      .attr('stop-color', 'white')
+    
+    gradientDef
+    .append("svg:stop")
+      .attr('offset', '100%')
+      .attr('stop-color', 'red')
+
+  }; setMyLinearGradientDef()    
+
+}; setSvgDefs()
 
 /*
 function setExtedsShape(length, ratio) {
@@ -511,9 +561,63 @@ function getOnwershipChain(id) {
   getNodeOwnershipChain(id)
 }
 
+// recompute and adjust the node rim's style, 
+// based on the intersection of two state properties.
+// (we currently leave the transition duration to the caller, as this 
+// function currently doesn't deal with the source state only the target state).
+function adjustedNodeRimVisualization(node, transitionDuration) {
+
+  var color
+  var width
+
+  // matrix for computing the appropriate style
+  if (node.selectStatus == 'selected'    &&  node.highlightStatus == 'highlighted')
+    { color = 'red'; width = 4; }
+
+  if (node.selectStatus == 'selected'    &&  node.highlightStatus == 'unhighlighted')
+    { color = 'red'; width = 2 }
+
+  if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'highlighted')
+    { color = 'orange'; width = 2 }
+
+  if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'unhighlighted') 
+    { color = '#fff'; width = 1 }
+
+  if (transitionDuration === undefined) transitionDuration = 0
+
+  // apply the style
+  var selector = '#node' + node.id
+  presentationCircle = presentationSVG.select(selector).select(".circle")
+
+  presentationCircle
+  .transition('nodeHighlighting').duration(transitionDuration)
+  .style('stroke', color)
+  .style('stroke-width', width)
+}
+
+function toggleHighlightState(nodeId, targetState) {
+
+  var node = displayGraph.node(nodeId)
+
+  //console.log(node.selectStatus)
+  //if (node.selectStatus == 'selected') return
+
+  if (targetState == 'highlight') {
+    node.highlightStatus = 'highlighted'
+    adjustedNodeRimVisualization(node, 200)
+  }
+
+  if (targetState == 'unhighlight') {
+    node.highlightStatus = 'unhighlighted'
+    adjustedNodeRimVisualization(node, 500)
+  }
+}
+
 function addNodeToDisplay(id) {
   var node = globalGraph.node(id)
-  node.status = 'collapsed'
+  node.expandStatus    = 'collapsed'
+  node.selectStatus    = 'unselected'
+  node.highlightStatus = 'unhighlighted'
   displayGraph.setNode(id, node)  
 }
 
@@ -592,7 +696,7 @@ function fireGraphDisplay(nodeId) {
 
   if (displayGraph.node(nodeId) === undefined) {
     console.log('not yet defined')
-    displayGraph = getNodeEnvGraph(nodeId,1) // TODO: is this a memory leak?
+    displayGraph = getNodeEnvGraph(nodeId, 2) // TODO: is this a memory leak?
     displayGraph.setGraph({})
 
     //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
@@ -613,10 +717,10 @@ function fireGraphDisplay(nodeId) {
 
   var selector = '#node' + nodeId
   presentationSVG.select(selector).select(".circle").style('stroke', 'orange').style('stroke-width', 3)
-                                  .transition('mouseOvership').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
+                                  .transition('nodeHighlighting').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
 
   var node = displayGraph.node(nodeId)
-  if (node.status === 'collapsed') expandNode(node)
+  if (node.expandStatus === 'collapsed') expandNode(node)
 }
 
 function initAwesomplete() {
@@ -661,7 +765,7 @@ function initAwesomplete() {
     }
   })
 
-  function initAwesomepleteDisplay() {
+  function initAwesompleteDisplay() {
     awesompleteContainerDiv.style.width = '60%'
     awesompleteContainerDiv.style.margin = '5% 0% 20% 20%'
 
@@ -672,7 +776,7 @@ function initAwesomplete() {
 
     searchDialogEnable()
 
-  }; initAwesomepleteDisplay()
+  }; initAwesompleteDisplay()
 
   window.addEventListener("awesomplete-selectcomplete", function(e) {
     // User made a selection from dropdown. 
@@ -741,8 +845,9 @@ function d3ForceLayoutInit() {
     })
 
     .on('dragend', function (node) { 
-      // determine drag-end v.s. click, by mouse movement
-      // (this is needed with d3, see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
+      // determine d3 drag-end v.s. a click, by mouse movement
+      // (this is the price of using the d3 drag event, 
+      //  see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
 
       if (interactionState.longStablePressEnd) return
 
@@ -750,15 +855,111 @@ function d3ForceLayoutInit() {
 
       if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 && 
           Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) == 0) {
-        console.log("status on click: " + node.status)
-        if (node.status === 'collapsed') expandNode(node)
-          else if (node.status === 'expanded') collapseNode(node)
+          // consider it a "click"
+
+          // is the ctrl key down during the click?
+
+          console.log(interactionState.ctrlDown)
+          if (interactionState.ctrlDown) toggleNodeSelect(node)
+          else toggleNodeExpansion(node)
       }
       else {
-        // fix the node on drag end
-        node.fixed = true
+        // consider it a drag end
+        node.fixed = true // fix the node
       }
     })
+}
+
+function toggleNodeExpansion(node) {
+  console.log("status on click: " + node.expandStatus)
+  if      (node.expandStatus === 'collapsed') expandNode(node)
+  else if (node.expandStatus === 'expanded') collapseNode(node)
+}
+
+function toggleNodeSelect(node) {
+  if      (node.selectStatus === 'unselected') {
+    node.selectStatus = 'selected'
+    adjustedNodeRimVisualization(node, 500)
+  }
+  else if (node.selectStatus === 'selected') {
+    node.selectStatus = 'unselected'
+    adjustedNodeRimVisualization(node, 500)
+  }
+}
+
+function expandNode(node) {
+
+  console.log("expanding node")
+
+  node.expandStatus = 'expanded'
+
+  // assign expanded radisu based on the bounding box needed for rendering the text,
+  // plus some padding of the same size as the active font size
+  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + sphereFontSize 
+  node.radius = expandedRadius
+
+  extendExpandedNodeEdges(node)
+  
+  var selector = '#node' + node.id
+  presentationSVG.select(selector).each(function(group) { 
+    var g = d3.select(this)
+    g.select(".circle")
+      .transition('nodeResizing').duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
+      .each("end", function(node) {
+        var svgText = g.append("text")
+                        .style('font-size', sphereFontSize)
+                        .style("fill", "#fff")
+                        .style('stroke-width', '0px')
+                        .attr("text-anchor", "middle")
+                        .attr('alignment-baseline', "middle")
+                        .attr('y', -(node.textBbox.height/4))
+                        .style("cursor", "pointer")
+                        .attr('pointer-events', 'none')
+        
+        formattedText(node).forEach(function(line, i) {
+          svgText.append('tspan')
+                 .attr('x', 0)
+                 .attr('dy', function() {
+                   if (i == 0) return 0
+                   else return '1.2em'
+                 })
+                 .text(line)    
+        })
+    })
+  })
+
+  //showSourceCode(node)
+
+  d3Render(displayGraph)
+
+}
+
+function collapseNode(node) {
+  /*
+  var supershape = d3.superformula()
+                     .type("rectangle")
+                     .size(1000)
+                     .segments(3600);
+                     */
+
+  console.log("collapsing node")
+
+  node.expandStatus = 'collapsed'
+  node.radius = node.collapsedRadius
+
+  var selector = '#node' + node.id
+  presentationSVG.select(selector).each(function(group) { 
+    var g = d3.select(this)
+    g.selectAll("text").remove()
+    g.select(".circle")
+      .transition('nodeResizing').duration(400).attr("r", node.radius) 
+  })
+  //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
+                 //.attr("class", "tooltip")
+
+
+  d3Render(displayGraph)
+
 }
 
 
@@ -916,81 +1117,6 @@ function showSourceCode(node) {
 }
 
 
-function expandNode(node) {
-
-  console.log("expanding node")
-
-  node.status = 'expanded'
-
-  // assign expanded radisu based on the bounding box needed for rendering the text,
-  // plus some padding of the same size as the active font size
-  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + sphereFontSize 
-  node.radius = expandedRadius
-
-  extendExpandedNodeEdges(node)
-  
-  var selector = '#node' + node.id
-  presentationSVG.select(selector).each(function(group) { 
-    var g = d3.select(this)
-    g.select(".circle")
-      .transition('nodeResizing').duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
-      .each("end", function(node) {
-        var svgText = g.append("text")
-                        .style('font-size', sphereFontSize)
-                        .style("fill", "#fff")
-                        .style('stroke-width', '0px')
-                        .attr("text-anchor", "middle")
-                        .attr('alignment-baseline', "middle")
-                        .attr('y', -(node.textBbox.height/4))
-                        .style("cursor", "pointer")
-                        .attr('pointer-events', 'none')
-        
-        formattedText(node).forEach(function(line, i) {
-          svgText.append('tspan')
-                 .attr('x', 0)
-                 .attr('dy', function() {
-                   if (i == 0) return 0
-                   else return '1.2em'
-                 })
-                 .text(line)    
-        })
-    })
-  })
-
-  //showSourceCode(node)
-
-  d3Render(displayGraph)
-
-}
-
-function collapseNode(node) {
-  /*
-  var supershape = d3.superformula()
-                     .type("rectangle")
-                     .size(1000)
-                     .segments(3600);
-                     */
-
-  console.log("collapsing node")
-
-  node.status = 'collapsed'
-  node.radius = node.collapsedRadius
-
-  var selector = '#node' + node.id
-  presentationSVG.select(selector).each(function(group) { 
-    var g = d3.select(this)
-    g.selectAll("text").remove()
-    g.select(".circle")
-      .transition('nodeResizing').duration(400).attr("r", node.radius) 
-  })
-  //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
-                 //.attr("class", "tooltip")
-
-
-  d3Render(displayGraph)
-
-}
-
 function d3Render(displayGraph) {
 
   d3DataBind = SetOrUpdateD3Data(displayGraph)
@@ -1106,35 +1232,25 @@ function d3Render(displayGraph) {
     // 
 
     .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
-      //console.log('mouseover')
       for (edge of displayGraph.nodeEdges(node.id)) {
         // highlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
         presentationSVG.select(selector).transition().style('stroke-width', 3)
         // highlight its nodes
-        var selector = '#node' + edge.v
-        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', 'orange')
-        var selector = '#node' + edge.w
-        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', 'orange')
+        toggleHighlightState(edge.v, "highlight")
+        toggleHighlightState(edge.w, "highlight")
       }
-
-      //if (node.status === 'collapsed') expandNode(node)
     })
 
     .on('mouseout', function(node) {
-      //console.log('mouseout')
       for (edge of displayGraph.nodeEdges(node.id)) {
-        // highlight the edge
+        // unhighlight the edge
         var selector = '#link' + edge.v + 'to' + edge.w
         presentationSVG.select(selector).transition().style('stroke-width', 1).delay(300)
-        // highlight its nodes
-        var selector = '#node' + edge.v
-        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', '#fff').duration(1000)
-        var selector = '#node' + edge.w
-        presentationSVG.select(selector).select(".circle").transition('mouseOvership').style('stroke', '#fff').duration(1000)
+        // unhighlight its nodes
+        toggleHighlightState(edge.v, "unhighlight")
+        toggleHighlightState(edge.w, "unhighlight")
       }
-
-      //collapseNode(node)
     })
 
   function superShape(node) {
