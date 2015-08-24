@@ -161,18 +161,13 @@ function setSvgDefs() {
 
     gradientDef
     .append("svg:stop")
-      .attr('offset', '0%')
-      .attr('stop-color', 'white')
-
-    gradientDef
-    .append("svg:stop")
-      .attr('offset', '90%')
+      .attr('offset', '95%')
       .attr('stop-color', 'orange')
 
     gradientDef
     .append("svg:stop")
       .attr('offset', '100%')
-      .attr('stop-color', 'red')
+      .attr('stop-color', 'yellow')
 
   }; setMyRadialGradientDef()
 
@@ -572,10 +567,10 @@ function adjustedNodeRimVisualization(node, transitionDuration) {
 
   // matrix for computing the appropriate style
   if (node.selectStatus == 'selected'    &&  node.highlightStatus == 'highlighted')
-    { color = 'red'; width = 4; }
+    { color = d3.rgb('red').darker(1); width = 4; }
 
   if (node.selectStatus == 'selected'    &&  node.highlightStatus == 'unhighlighted')
-    { color = 'red'; width = 2 }
+    { color = d3.rgb('red').darker(1); width = 2 }
 
   if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'highlighted')
     { color = 'orange'; width = 2 }
@@ -715,11 +710,15 @@ function fireGraphDisplay(nodeId) {
 
   // do the following both whether the node was already on the display or not
 
-  var selector = '#node' + nodeId
-  presentationSVG.select(selector).select(".circle").style('stroke', 'orange').style('stroke-width', 3)
-                                  .transition('nodeHighlighting').duration(7000).style('stroke', '#fff').style('stroke-width', 1)
-
   var node = displayGraph.node(nodeId)
+
+  var selector = '#node' + nodeId
+  presentationSVG.select(selector).select(".circle")
+    .transition('nodeHighlighting').duration(500).style('stroke', 'orange').style('stroke-width', 6)
+    .each('end', function() { 
+      adjustedNodeRimVisualization(node, 2000)
+    })
+  
   if (node.expandStatus === 'collapsed') expandNode(node)
 }
 
