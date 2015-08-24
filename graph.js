@@ -161,13 +161,13 @@ function setSvgDefs() {
 
     gradientDef
     .append("svg:stop")
-      .attr('offset', '95%')
-      .attr('stop-color', 'orange')
+      .attr('offset', '30%')
+      .attr('stop-color', 'green')
 
     gradientDef
     .append("svg:stop")
-      .attr('offset', '100%')
-      .attr('stop-color', 'yellow')
+      .attr('offset', '90%')
+      .attr('stop-color', d3.rgb('blue').brighter(1))
 
   }; setMyRadialGradientDef()
 
@@ -252,7 +252,7 @@ function formattedText(node) {
   //var text = [node.kind]
   var text = []
   
-  var splitName = splitByLengthAndCamelOrWord(node.name)
+  var splitName = splitByLengthAndCamelOrWord(node.displayName)
 
   splitName.forEach(function(line) {
     text.push(line)
@@ -273,19 +273,40 @@ function calcBBox(node) {
   return svgText.node().getBBox()
 }
 
+function adjustNames(node) {
+  if (node.kind == 'anonymous class' && node.name == '$anon') {
+    node.name = 'unnamed class'
+    node.displayName = node.name
+  }
+
+  if (node.kind == 'constructor' && node.name == '<init>') {
+    node.name = 'constructor'
+    node.displayName = node.name
+  }
+}
+
 function loadNodes(callback){
   console.log('loading nodes')
   d3.csv('cae-data/nodes', function(err, inputNodes) {
     if (err) console.error(err)
     else {
-      console.log('input nodes: '); console.dir (inputNodes)
+      console.log('raw input nodes: '); console.dir (inputNodes)
+      
       inputNodes.forEach(function(node) {
+
+        adjustNames(node)
+
+        if (node.displayName === undefined) 
+          node.displayName = node.kind + ' ' + node.name
+
         bbox = calcBBox(node)
-        //console.log(bbox)
-        globalGraph.setNode(node.id, { name:   node.name, 
-                                       kind:   node.kind, 
-                                       textBbox: bbox })
+        globalGraph.setNode(node.id, { name:        node.name, 
+                                       kind:        node.kind, 
+                                       displayName: node.displayName,
+                                       textBbox:    bbox })
+
       })
+
       console.log('nodes: '); console.dir(globalGraph.nodes())
       
       console.log('loading sources, this may take a while...'); 
@@ -297,15 +318,29 @@ function loadNodes(callback){
   })
 }
 
+function ownerShipNormalize(edge){
+  // make an 'owned by' edge equivalent to a 'declares member' edge
+  // the nature of the real-world difference will be sorted out by using this
+  // code, but as it currently stands they are considered just the same here.
+  // in the end, this will be handled in the Scala code itself
+  if (edge.edgeKind == 'owned by') {
+    t = edge.id1; edge.id1 = edge.id2; edge.id2 = t; // swap edge's direction
+    edge.edgeKind = 'declares member'
+  }
+}
+
 function loadEdges(callback){
   console.log('loading edges')
   d3.csv('cae-data/edges', function(err, inputEdges) {
     if (err) console.error(err)
     else {
       console.log('input edges: '); console.dir(inputEdges)
+
       inputEdges.forEach(function(edge) {
+        ownerShipNormalize(edge)
         globalGraph.setEdge(edge.id1, edge.id2, { edgeKind: edge.edgeKind });
       })
+
       console.log('edges: '); console.dir(globalGraph.edges())
 
       inputEdges.forEach(function(edge) {
@@ -359,7 +394,7 @@ function onDataLoaded(callback) {
 
   applyGraphFilters()
   
-  dataEmbelish()
+  debugListSpecialNodes()
 
   initRadii()
 
@@ -479,44 +514,23 @@ function applyGraphFilters() {
   function filterCaseClassDefaultCopiers() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
-      if (node.kind == 'method' && node.name.indexOf('copy$default') == 0)
+      if (node.kind == 'method' && node.name.indexOf('copy$default') == 0) {
 
         logInputGraphPreprocessing('removing case class default copier ' + node.name + ' (and its edge)')
 
-        //globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
-        //globalGraph.removeNode(nodeId)
-
+        globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
+        globalGraph.removeNode(nodeId)
+      }
     })
   }
 
   filterExternalPackageChains()
   filterCaseClassDefaultCopiers()
 }
-//
-// embelish the graph with more humane node names for special cases, and the like
-//
-function dataEmbelish() {
 
-  function ownerShipNormalize(edge){
-    // make an 'owned by' edge equivalent to a 'declares member' edge
-    // the nature of the real-world difference will be sorted out by using this
-    // code, but as it currently stands they are considered just the same here.
-    // in the end, this will be handled in the Scala code itself
-    if (globalGraph.edge(edge).edgeKind == 'owned by') {
-      t = edge.id1; edge.id1 = edge.id2; edge.id2 = t; // swap edge's direction
-      globalGraph.edge(edge).edgeKind = 'declares member'
-    }
-  }
-
-  function embelishAnonymousClass(nodeId) {
-    var node = globalGraph.node(nodeId)
-    if (node.kind == 'anonymous class' && node.name == '$anon')
-      node.name = 'unnamed class'
-  }
-
+function debugListSpecialNodes() {
+  
   globalGraph.edges().forEach(ownerShipNormalize)
-
-  globalGraph.nodes().forEach(embelishAnonymousClass)
 
   globalGraph.nodes().forEach(function(nodeId){
     if (globalGraph.node(nodeId).name.indexOf('$') > 0) console.log(globalGraph.node(nodeId).name)
@@ -1093,6 +1107,7 @@ function nodeColor(node) {
   if (node.kind == 'method')          
     if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
     else                              return d3.rgb('green')
+  if (node.kind == 'constructor')     return 'url(#MyRadialGradientDef)'
   if (node.kind == 'value')           return d3.rgb('green').brighter(1.3)
   if (node.kind == 'package')         return d3.rgb('white').darker(2)
 }
@@ -1189,7 +1204,7 @@ function d3Render(displayGraph) {
 
     .append("title") // this is the default html tooltip definition
       .attr("class", "tooltip")
-      .text(function(d) { return d.kind + ' ' + d.name })
+      .text(function(d) { return d.displayName + ' (debug id ' + d.id + ')' })
 
   d3DisplayNodes
     .on('mousedown', function(node) {
