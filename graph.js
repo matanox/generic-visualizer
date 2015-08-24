@@ -528,6 +528,41 @@ function applyGraphFilters() {
   filterCaseClassDefaultCopiers()
 }
 
+function passiveEdgeKindVoice(edgeKind) {
+  if (edgeKind == 'declares member') return 'is declared by'
+  if (edgeKind == 'extends')         return 'is extended by'
+  if (edgeKind == 'is of type')      return 'is instantiated as'
+  if (edgeKind == 'uses')            return 'is used by'
+}
+
+function describe(graph, edge) {
+  edgeKind = graph.edge(edge).edgeKind
+
+  return graph.node(edge.v).displayName + ' ' + 
+         edgeKind + ' ' + 
+         graph.node(edge.w).displayName
+}
+
+function describeReversed(graph, edge) {
+  edgeKind = graph.edge(edge).edgeKind
+
+  return graph.node(edge.w).displayName + ' ' + 
+         passiveEdgeKindVoice(edgeKind) + ' ' + 
+         graph.node(edge.v).displayName
+}
+
+function logNodeNeighbors(graph, nodeId) {
+  console.log(graph.node(nodeId).name + ' connected nodes')
+  graph.nodeEdges(nodeId).forEach(function(edge) {
+    edgeKind = graph.edge(edge).edgeKind
+    
+    if (nodeId == edge.v) 
+      console.log(describe(graph,edge))
+    if (nodeId == edge.w) 
+      console.log(describeReversed(graph, edge))
+  })
+}
+
 function debugListSpecialNodes() {
   
   globalGraph.edges().forEach(ownerShipNormalize)
@@ -754,7 +789,7 @@ function initAwesomplete() {
     list: nodes,
     item: function (node, input) { 
             let suggestedElem = document.createElement('li')
-            suggestedElem.appendChild(document.createTextNode(node.data.kind + ' ' + node.data.name + ' ' + '(' + node.id + ')'))
+            suggestedElem.appendChild(document.createTextNode(node.data.displayName + ' (' + node.id + ')'))
             return suggestedElem
           },
     filter: function (node, input) {
@@ -887,6 +922,8 @@ function toggleNodeExpansion(node) {
   console.log("status on click: " + node.expandStatus)
   if      (node.expandStatus === 'collapsed') expandNode(node)
   else if (node.expandStatus === 'expanded') collapseNode(node)
+
+  logNodeNeighbors(globalGraph, node.id)
 }
 
 function toggleNodeSelect(node) {
