@@ -401,6 +401,7 @@ function onDataLoaded(callback) {
   console.log('data filters applied')
 
   displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
+  displayGraph.setGraph({}) 
 
   d3ForceLayoutInit()
 
@@ -481,6 +482,11 @@ function filterByChain(chain, graph) {
     trim(nodeId)
 }
 
+function removeWithEdges(graph, nodeId) {
+  globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
+  globalGraph.removeNode(nodeId)
+}
+
 //
 // filter out non-informative nodes from the global graph
 //
@@ -509,23 +515,27 @@ function applyGraphFilters() {
                  parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
   }
 
-  // The compiler creates default anonymous methods for copying the arguments passed
-  // to a case class. They do not convey any useful information, hence filtered.
-  function filterCaseClassDefaultCopiers() {
+  function variousFilters() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
+
+      // The compiler creates default anonymous methods for copying the arguments passed
+      // to a case class. They do not convey any useful information, hence filtered.
       if (node.kind == 'method' && node.name.indexOf('copy$default') == 0) {
-
         logInputGraphPreprocessing('removing case class default copier ' + node.name + ' (and its edge)')
+        removeWithEdges(globalGraph, nodeId)
+      }
 
-        globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
-        globalGraph.removeNode(nodeId)
+      // redundant method definition created for some traits
+      if (node.kind == 'method' && node.name === '$init$') {
+        logInputGraphPreprocessing('removing redundant trait init method ' + node.name + ' (and its edge)')
+        removeWithEdges(globalGraph, nodeId)
       }
     })
   }
 
   filterExternalPackageChains()
-  filterCaseClassDefaultCopiers()
+  variousFilters()
 }
 
 function passiveEdgeKindVoice(edgeKind) {
@@ -738,24 +748,23 @@ function computeCirclePack(hierarchy) {
 // compute circle graph
 function fireGraphDisplay(nodeId) {
 
-  if (displayGraph.node(nodeId) === undefined) {
-    console.log('not yet defined')
-    displayGraph = getNodeEnvGraph(nodeId, 2) // TODO: is this a memory leak?
-    displayGraph.setGraph({})
+  //if (displayGraph.node(nodeId) === undefined) {
+  console.log('not yet defined')
+  getNodeEnvGraph(nodeId, 1) 
 
-    //dagre.layout(displayGraph) // this creates a dagre initial layout that is unfortunately 
-                                 // not bound to the window's viewport but may
-                                 // be much much larger.
+  // this creates a dagre initial layout that is unfortunately 
+  // not bound to the window's viewport but may
+  // be much much larger.
+  //dagre.layout(displayGraph) 
+  //console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
 
-    console.log(displayGraph)
-    console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
-    console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
-    console.log('layout computed')
+  console.log(displayGraph)
+  console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
+  console.log('layout computed')
 
-    // computeCirclePack(makeHierarchyChain(nodeId)) // we don't do anything with it right now
+  // computeCirclePack(dispyChain(nodeId)) // we don't do anything with it right now
 
-    d3Render(displayGraph)
-  }
+  d3Render(displayGraph)
 
   // do the following both whether the node was already on the display or not
 
