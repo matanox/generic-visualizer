@@ -408,7 +408,7 @@ function onDataLoaded(callback) {
 
   applyGraphFilters()
   
-  debugListSpecialNodes()
+  debugListSpecialNodes() // show what special nodes still slip through the filters
 
   initRadii()
 
@@ -427,8 +427,11 @@ function onDataLoaded(callback) {
   initAwesomplete()
   //fireGraphDisplay(87570)
   //fireGraphDisplay(35478)
-  fireGraphDisplay(8464)
+  //fireGraphDisplay(8464)
   //fireGraphDisplay(8250)
+
+  //listUnusedTypes(globalGraph).forEach(fireGraphDisplay)
+  fireGraphDisplay(listUnusedTypes(globalGraph)[0])
 }
 
 // recursive removal of nodes owned by a given node, 
@@ -607,27 +610,6 @@ function collapseValRepresentationPairs() {
                                 edge.v + ' -> ' + edge.w + ' by removing ' + edge.w + ' alltogether')
     removeWithEdges(globalGraph, edge.w)
   })
-}
-
-// temporary scafolding function
-function debugGetValRepresentationPairs() {
-  var valRepresentationPairs = []
-  globalGraph.nodes().forEach(function(node){ 
-    globalGraph.nodeEdges(node).forEach(function(edge) {
-      if (globalGraph.node(edge.v).name == globalGraph.node(edge.w).name)
-        if (globalGraph.node(edge.v).kind == 'value' && globalGraph.node(edge.w).kind == 'value')
-          if (Math.abs(v - w) == 1) // is this really a requirement?
-            if (globalGraph.edge(edge).edgeKind == 'uses')
-              duplicates.push([edge.v, edge.w])
-    })
-  })
-  valRepresentationPairs.forEach(function(d) { 
-    if (Math.abs(d[0] - d[1]) == 1) sequence = true 
-      else sequence = false
-    console.log(sequence + ': ' + globalGraph.node(d[0]).displayName + ' -> ' + globalGraph.node(d[1]).displayName) 
-  })
-
-  return valRepresentationPairs
 }
 
 function passiveEdgeKindVoice(edgeKind) {
@@ -1439,8 +1421,11 @@ function d3Render(displayGraph) {
   })
 }
 
+// list unused types
+// these may be either dead code, or 
+// entry points in case the data is for a library project
 function listUnusedTypes(graph) {
-  var entryPoints = []
+  var notUsed = []
   graph.nodes().forEach(function(nodeId) {
     if (graph.node(nodeId).kind == 'class'  || 
         graph.node(nodeId).kind == 'object' ||
@@ -1453,10 +1438,10 @@ function listUnusedTypes(graph) {
               //if (graph.edge(edge).edgeKind == 'uses')       used = true
             }
           })
-          if (!used) entryPoints.push(nodeId)
+          if (!used) notUsed.push(nodeId)
         }
   })
-  console.log(entryPoints.length)
+  console.log(notUsed.length)
   console.log(graph.nodes().length)
-  return entryPoints
+  return notUsed
 }
