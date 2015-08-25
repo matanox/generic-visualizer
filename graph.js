@@ -283,6 +283,20 @@ function adjustNames(node) {
     node.name = 'constructor'
     node.displayName = node.name
   }
+
+  if (node.kind == 'method' && node.name.indexOf('<init>$default$') == 0) {
+    node.name = 'default argument'
+    node.displayName = node.name
+  }
+
+  if (node.kind == 'value' && node.name.indexOf('x0$') == 0) { // a block argument
+    node.name = 'a block argument'
+    node.displayName = node.name
+  }
+
+  if (node.kind == 'lazy value') { // because showing laziness seems a little over of scope...
+    node.kind = 'value'
+  }
 }
 
 function loadNodes(callback){
@@ -483,19 +497,29 @@ function filterByChain(chain, graph) {
 }
 
 function removeWithEdges(graph, nodeId) {
+  //console.log(nodeId)
   globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
   globalGraph.removeNode(nodeId)
+}
+
+// return direct callers of a node
+function directUsers(graph, nodeId) {
+  var callers = graph.nodeEdges(nodeId).filter(function(edge) { 
+    return (edge.w == nodeId && 
+            graph.edge(edge).edgeKind === 'uses')
+  })
+  return callers
+}
+
+// this may ultimately go to a separate output file for easy audit and/or test enablement
+function logInputGraphPreprocessing(text) {
+  console.log(text)
 }
 
 //
 // filter out non-informative nodes from the global graph
 //
 function applyGraphFilters() {
-
-  // this may ultimately go to a separate output file for easy audit and/or test enablement
-  function logInputGraphPreprocessing(text) {
-    console.log(text)
-  }
 
   // filter away everything in certain external packages, other than their usage itself 
   // made in the project's code
@@ -526,16 +550,84 @@ function applyGraphFilters() {
         removeWithEdges(globalGraph, nodeId)
       }
 
+      // similar to the above, it appears these just apply the default copy methods
+      if (node.kind == 'method' && node.name.indexOf('apply$default') == 0) {
+        logInputGraphPreprocessing('removing default applier ' + node.name + ' (and its edge)')
+        removeWithEdges(globalGraph, nodeId)
+      }
+
       // redundant method definition created for some traits
       if (node.kind == 'method' && node.name === '$init$') {
         logInputGraphPreprocessing('removing redundant trait init method ' + node.name + ' (and its edge)')
         removeWithEdges(globalGraph, nodeId)
+      }
+
+      // 
+      if (node.kind == 'value' && node.name.indexOf('x$') == 0)  // unnamed value
+        if (directUsers(globalGraph, nodeId).length == 0) {      // that is not used
+          logInputGraphPreprocessing('removing unnamed and unused value ' + node.name + ' (and its edges)')
+          removeWithEdges(globalGraph, nodeId)
       }
     })
   }
 
   filterExternalPackageChains()
   variousFilters()
+  collapseValRepresentationPairs()
+}
+  
+// Collapses all val pairs that represent a single val each.
+//
+// Rational: the compiler will generate two vals for each val found 
+// in the code being compiled. Here we collapse them,
+// as the duplication seems not to add any 
+// informative value.
+//
+// Note that it is better to keep this as a separate function,
+// in case inter-relationships between such pairs emerge
+// in further testing.
+//
+function collapseValRepresentationPairs() {
+  function getValRepresentationPairs() {
+    var valRepresentationPairs = []
+      globalGraph.edges().forEach(function(edge) {
+        if (globalGraph.node(edge.v).name == globalGraph.node(edge.w).name)
+          if (globalGraph.node(edge.v).kind == 'value' && globalGraph.node(edge.w).kind == 'value')
+            if (edge.w - edge.v == 1) // is this really a requirement?
+              if (globalGraph.edge(edge).edgeKind == 'uses') 
+                valRepresentationPairs.push(edge)
+      })
+
+    a = valRepresentationPairs
+    return valRepresentationPairs
+  }
+  
+  getValRepresentationPairs().forEach(function(edge){
+    logInputGraphPreprocessing('deduplicating value representation pair ' + 
+                                edge.v + ' -> ' + edge.w + ' by removing ' + edge.w + ' alltogether')
+    removeWithEdges(globalGraph, edge.w)
+  })
+}
+
+// temporary scafolding function
+function debugGetValRepresentationPairs() {
+  var valRepresentationPairs = []
+  globalGraph.nodes().forEach(function(node){ 
+    globalGraph.nodeEdges(node).forEach(function(edge) {
+      if (globalGraph.node(edge.v).name == globalGraph.node(edge.w).name)
+        if (globalGraph.node(edge.v).kind == 'value' && globalGraph.node(edge.w).kind == 'value')
+          if (Math.abs(v - w) == 1) // is this really a requirement?
+            if (globalGraph.edge(edge).edgeKind == 'uses')
+              duplicates.push([edge.v, edge.w])
+    })
+  })
+  valRepresentationPairs.forEach(function(d) { 
+    if (Math.abs(d[0] - d[1]) == 1) sequence = true 
+      else sequence = false
+    console.log(sequence + ': ' + globalGraph.node(d[0]).displayName + ' -> ' + globalGraph.node(d[1]).displayName) 
+  })
+
+  return valRepresentationPairs
 }
 
 function passiveEdgeKindVoice(edgeKind) {
@@ -705,7 +797,7 @@ function addNodeNeighbors(graph, id, degree) {
 function getNodeEnvGraph(id, degree) {
 
   // this is a naive implementation meant for very small values of degree.
-  // for any humbly large degree, this needs to be re-implemented for efficient Big O(V,E),
+  // for any humbly large degree, this needs to be re-implemented for efficient Big O(V,fembelish),
   // as the current one is very naive in that sense.
 
   console.log(id)
