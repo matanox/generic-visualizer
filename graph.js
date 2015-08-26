@@ -1352,14 +1352,6 @@ function d3Render(displayGraph) {
       .attr("class", "tooltip")
       .text(function(d) { return d.displayName + ' (debug id ' + d.id + ')' })
 
-  d3DisplayNodes.exit().transition('showOrRemove').delay(1000)
-                       .duration(2500).ease('poly(2)')
-                       .style('fill-opacity', 0).style('stroke-opacity', 0).remove()
-  d3DisplayLinks.exit().transition('showOrRemove')
-                       .duration(0).style('stroke-opacity', 0).remove()
-  d3ExtensionArcs.exit().transition('showOrRemove')
-                       .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
-
   d3DisplayNodes
     .on('mousedown', function(node) {
       mouseDown = new Date()
@@ -1421,6 +1413,20 @@ function d3Render(displayGraph) {
       }
     })
 
+  d3DisplayNodes.exit().on('mousedown', null) 
+                       .on('mouseup', null)
+                       .on('dblclick', null)
+                       .on('mouseover', null)
+                       .on('mouseout', null)
+
+  d3DisplayNodes.exit().transition('showOrRemove').delay(1000)
+                       .duration(2500).ease('poly(2)')
+                       .style('fill-opacity', 0).style('stroke-opacity', 0).remove()
+  d3DisplayLinks.exit().transition('showOrRemove')
+                       .duration(0).style('stroke-opacity', 0).remove()
+  d3ExtensionArcs.exit().transition('showOrRemove')
+                       .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
+
   function superShape(node) {
     var supershape = d3.superformula()
                        .type("rectangle")
@@ -1428,19 +1434,6 @@ function d3Render(displayGraph) {
                        .segments(3600);
 
     var selector = '#node' + node.id
-
-    var radius = Math.min(presentationSVGWidth, presentationSVGHeight) / 2
-
-    presentationSVG.select(selector).transition().duration(2000).attr("r", radius)
-
-    d3Render(displayGraph)
-
-    console.log(node)                   
-    console.log(supershape)
-
-    console.log('Source Code:')
-    console.log('------------')
-    console.log(sourceMap[node.id])
   }
 
   //console.log(d3DataBind.nodesJson.length)
