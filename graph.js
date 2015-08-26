@@ -1,4 +1,4 @@
-console.log('javascript started')
+ console.log('javascript started')
 
 var width
 var height
@@ -61,6 +61,26 @@ document.onkeypress = function(evt) {
     interactionState.searchDialogEnabled = true
     searchDialogEnable()
     document.getElementById('inputBar').focus()
+  }
+
+  function getSelectedNodes() {
+    return displayGraph.nodes().filter(function(nodeId) {
+      return displayGraph.node(nodeId).selectStatus === 'selected'
+    })
+  }
+
+  if (evt.keyCode == 43) { // plus key
+    getSelectedNodes().forEach(function(nodeId) {
+      addNodeNeighbors(displayGraph, nodeId, 1)
+    })
+    d3Render(displayGraph)
+  }
+
+  if (evt.keyCode == 45) { // minus key
+    getSelectedNodes().forEach(function(nodeId) {      
+      removeNodeFromDisplay(nodeId)
+    })
+    d3Render(displayGraph)
   }
 }
 
@@ -501,8 +521,8 @@ function filterByChain(chain, graph) {
 
 function removeWithEdges(graph, nodeId) {
   //console.log(nodeId)
-  globalGraph.nodeEdges(nodeId).forEach(function(edge) { globalGraph.removeEdge(edge)})
-  globalGraph.removeNode(nodeId)
+  graph.nodeEdges(nodeId).forEach(function(edge) { graph.removeEdge(edge)})
+  graph.removeNode(nodeId)
 }
 
 // return direct callers of a node
@@ -741,12 +761,18 @@ function toggleHighlightState(nodeId, targetState) {
   }
 }
 
+function removeNodeFromDisplay(nodeId) {
+  removeWithEdges(displayGraph, nodeId)
+}
+
 function addNodeToDisplay(id) {
-  var node = globalGraph.node(id)
-  node.expandStatus    = 'collapsed'
-  node.selectStatus    = 'unselected'
-  node.highlightStatus = 'unhighlighted'
-  displayGraph.setNode(id, node)  
+  if (displayGraph.node(id) === undefined) {   
+    var node = globalGraph.node(id)
+    node.expandStatus    = 'collapsed'
+    node.selectStatus    = 'unselected'
+    node.highlightStatus = 'unhighlighted'
+    displayGraph.setNode(id, node)  
+  }
 }
 
 // add node neighbors and render them
@@ -1325,6 +1351,14 @@ function d3Render(displayGraph) {
     .append("title") // this is the default html tooltip definition
       .attr("class", "tooltip")
       .text(function(d) { return d.displayName + ' (debug id ' + d.id + ')' })
+
+  d3DisplayNodes.exit().transition('showOrRemove').delay(1000)
+                       .duration(2500).ease('poly(2)')
+                       .style('fill-opacity', 0).style('stroke-opacity', 0).remove()
+  d3DisplayLinks.exit().transition('showOrRemove')
+                       .duration(0).style('stroke-opacity', 0).remove()
+  d3ExtensionArcs.exit().transition('showOrRemove')
+                       .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
 
   d3DisplayNodes
     .on('mousedown', function(node) {
