@@ -1,4 +1,4 @@
- console.log('javascript started')
+console.log('javascript started')
 
 var width
 var height
@@ -299,6 +299,11 @@ function adjustNames(node) {
     node.displayName = node.name
   }
 
+  if (node.kind == 'value' && node.name.indexOf('qual$') == 0) {
+    node.name = 'unnamed value'
+    node.displayName = node.name
+  }
+
   if (node.kind == 'constructor' && node.name == '<init>') {
     node.name = 'constructor'
     node.displayName = node.name
@@ -337,6 +342,7 @@ function loadNodes(callback){
         globalGraph.setNode(node.id, { name:        node.name, 
                                        kind:        node.kind, 
                                        displayName: node.displayName,
+                                       definition:  node.definition,
                                        textBbox:    bbox })
 
       })
@@ -387,26 +393,45 @@ function loadEdges(callback){
   })
 }
 
-sourceMap = {}
-// recursively fetch source for all nodes, synchronously
-function getSources(callback, i) {
-  i = i+1 || 0; 
 
-  if (i == globalGraph.nodes().length) 
-  {
-    console.log('done fetching sources')
-    callback()
-  }
-  else {
-    id = globalGraph.nodes()[i]
-    d3.text('cae-data/' + 'node-source-' + id, function(err, nodeSource) {
+function getSources(callback) {
+  sourceMap = {}
+  
+  // filter down the nodes that are defined in the project itself rather than 
+  // imported from outside, as only for these nodes, their source should be fetched
+  var projectNodes = globalGraph.nodes().filter(function(nodeId) { 
+    return (globalGraph.node(nodeId).definition === 'project')
+  })
+
+  // asynchronously fetch the sources for those nodes
+  var asyncPending = 0
+  var sources = 0
+  projectNodes.forEach(function(nodeId) {
+    asyncPending += 1
+    d3.text('cae-data/' + 'node-source-' + nodeId, function(err, nodeSource) {
       if (err) console.error(err)
       else {
-        sourceMap[id] = nodeSource
-        getSources(callback, i) // next
+        sourceMap[nodeId] = nodeSource
+        sources += 1
       }
+      asyncPending -= 1
     })
-  }
+  })
+
+  // check source fetching progress status every interval
+  var interval = window.setInterval(function() {
+    console.log(asyncPending + ' sources still pending loading')
+    if (asyncPending == 0) {
+      clearInterval(interval)
+
+      if (sources == projectNodes.length) 
+        console.log('done fetching all sources')
+      else
+        console.warn('failed fetching some sources')
+
+      callback()      
+    }
+  }, 300) // the interval length in ms
 }
 
 function initRadii() {
@@ -421,8 +446,8 @@ function initRadii() {
 }
 
 function onDataLoaded(callback) {
-  if (Object.keys(sourceMap).length != globalGraph.nodes().length)
-    console.warn('number of sources does not equal the number of nodes')
+  //if (Object.keys(sourceMap).length != globalGraph.nodes().length)
+  //  console.warn('number of sources does not equal the number of nodes')
 
   console.log('data loading done')
 
@@ -434,7 +459,7 @@ function onDataLoaded(callback) {
 
   console.log('data filters applied')
 
-  displayGraph = new dagre.graphlib.Graph({ multigraph: true}); 
+  displayGraph = new dagre.graphlib.Graph({ multigraph: true}); // directed graph, allowing multiple edges between two nodes
   displayGraph.setGraph({}) 
 
   d3ForceLayoutInit()
@@ -451,6 +476,8 @@ function onDataLoaded(callback) {
   //fireGraphDisplay(8250)
 
   //listUnusedTypes(globalGraph).forEach(fireGraphDisplay)
+  unusedTypes = listUnusedTypes(globalGraph)
+  console.log(unusedTypes.length + ' unused project types detected')
   fireGraphDisplay(listUnusedTypes(globalGraph)[0])
 }
 
@@ -633,30 +660,31 @@ function collapseValRepresentationPairs() {
 }
 
 function passiveEdgeKindVoice(edgeKind) {
-  if (edgeKind == 'declares member') return 'is declared by'
-  if (edgeKind == 'extends')         return 'is extended by'
-  if (edgeKind == 'is of type')      return 'is instantiated as'
-  if (edgeKind == 'uses')            return 'is used by'
+  if (edgeKind == 'declares member') return 'declared by'
+  if (edgeKind == 'extends')         return 'extended by'
+  if (edgeKind == 'is of type')      return 'instantiated as'
+  if (edgeKind == 'uses')            return 'used by'
 }
 
 function describe(graph, edge) {
   edgeKind = graph.edge(edge).edgeKind
 
-  return graph.node(edge.v).displayName + ' ' + 
-         edgeKind + ' ' + 
+  return edgeKind + ' ' + 
          graph.node(edge.w).displayName
 }
 
 function describeReversed(graph, edge) {
   edgeKind = graph.edge(edge).edgeKind
 
-  return graph.node(edge.w).displayName + ' ' + 
-         passiveEdgeKindVoice(edgeKind) + ' ' + 
+  return passiveEdgeKindVoice(edgeKind) + ' ' + 
          graph.node(edge.v).displayName
 }
 
 function logNodeNeighbors(graph, nodeId) {
-  console.log(graph.node(nodeId).name + ' connected nodes')
+  
+  console.log('')
+  console.log(graph.node(nodeId).displayName + ':')
+
   graph.nodeEdges(nodeId).forEach(function(edge) {
     edgeKind = graph.edge(edge).edgeKind
     
@@ -665,6 +693,8 @@ function logNodeNeighbors(graph, nodeId) {
     if (nodeId == edge.w) 
       console.log(describeReversed(graph, edge))
   })
+
+  console.log('')
 }
 
 function debugListSpecialNodes() {
@@ -1031,8 +1061,6 @@ function toggleNodeExpansion(node) {
   console.log("status on click: " + node.expandStatus)
   if      (node.expandStatus === 'collapsed') expandNode(node)
   else if (node.expandStatus === 'expanded') collapseNode(node)
-
-  logNodeNeighbors(globalGraph, node.id)
 }
 
 function toggleNodeSelect(node) {
@@ -1087,7 +1115,12 @@ function expandNode(node) {
     })
   })
 
-  //showSourceCode(node)
+  logNodeNeighbors(globalGraph, node.id)
+
+  if (node.definition == 'project') 
+    showSourceCode(node)
+  if (node.definition == 'external') 
+    console.log(node.displayName + ' is defined externally to the project being visualized')
 
   d3Render(displayGraph)
 
@@ -1271,9 +1304,10 @@ function extendExpandedNodeEdges(node) {
 
 function showSourceCode(node) {
     
-    console.log('Source Code:')
-    console.log('------------')
+    console.log('')
+    console.log('Source Code for ' + node.displayName + ':')
     console.log(sourceMap[node.id])
+    console.log('')
 }
 
 
@@ -1428,6 +1462,7 @@ function d3Render(displayGraph) {
                        .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
 
   function superShape(node) {
+    // consider using https://github.com/popkinj/polymorph instead.
     var supershape = d3.superformula()
                        .type("rectangle")
                        .size(1000)
@@ -1448,27 +1483,46 @@ function d3Render(displayGraph) {
   })
 }
 
-// list unused types
-// these may be either dead code, or 
-// entry points in case the data is for a library project
+function getMemberUsers(graph, nodeId) {
+  var users = []
+  graph.nodeEdges(function(edge) {
+    if (graph.edge(edge).edgeKind == 'uses')
+      if (edge.w == nodeId)
+        users.push(edge.v)
+  })
+  return users
+}
+
+// list unused types (unextended, uninstantiated, or having no members being used).
 function listUnusedTypes(graph) {
-  var notUsed = []
-  graph.nodes().forEach(function(nodeId) {
+  
+  function isNodeUsed(nodeId) {
     if (graph.node(nodeId).kind == 'class'  || 
         graph.node(nodeId).kind == 'object' ||
-        graph.node(nodeId).kind == 'object') {
+        graph.node(nodeId).kind == 'trait') {
           var used = false
+
           graph.nodeEdges(nodeId).forEach(function(edge) {
             if (edge.w == nodeId) {
-              if (graph.edge(edge).edgeKind == 'extends')    used = true
-              if (graph.edge(edge).edgeKind == 'is of type') used = true
-              //if (graph.edge(edge).edgeKind == 'uses')       used = true
+              if (graph.edge(edge).edgeKind == 'extends')    return true
+              if (graph.edge(edge).edgeKind == 'is of type') return true
+              if (graph.edge(edge).edgeKind == 'uses')       return true
             }
-          })
-          if (!used) notUsed.push(nodeId)
+          }) 
         }
+
+    return false
+  }
+
+  var notUsed = []
+
+  var projectNodes = graph.nodes().filter(function(nodeId) {
+    return graph.node(nodeId).definition === 'project'
   })
-  console.log(notUsed.length)
-  console.log(graph.nodes().length)
+
+  projectNodes.forEach(function(nodeId) {
+    if (!isNodeUsed(nodeId)) notUsed.push(nodeId)
+  })
+
   return notUsed
 }
