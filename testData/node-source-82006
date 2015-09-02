@@ -1,3 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-    val signatures = targets.map { s => signatureFormat.write(steps(s).stepInfo.signature) }.toList.toJson

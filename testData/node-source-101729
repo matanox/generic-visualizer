@@ -1,7 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-    def findNodes(s: PipelineStep): Iterable[PipelineStep] =
-      Seq(s) ++ s.stepInfo.dependencies.flatMap {
-        case (name, step) =>
-          findNodes(step)
-      }

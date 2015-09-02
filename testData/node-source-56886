@@ -1,3 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
-
-    stepInfo: () => PipelineStepInfo = self.stepInfo _,

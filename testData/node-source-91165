@@ -1,5 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ReadFromArtifact.scala >
-
-case class ReadFromArtifact[T, A <: Artifact](
-    reader: Deserializer[T, A],
-    artifact: A

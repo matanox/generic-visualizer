@@ -1,7 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
-
-    override def stepInfo: PipelineStepInfo =
-      super.stepInfo.copy(
-        className = data.getClass.getName,
-        classVersion = data.hashCode.toHexString
-      )

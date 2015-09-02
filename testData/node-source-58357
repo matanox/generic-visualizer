@@ -1,7 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-      override def stepInfo =
-        super.stepInfo.addParameters("contentHash" -> contentHash)
-          .copy(className = "DynamicResource")
-          .copy(outputLocation = Some(artifact.url))
-          .addParameters("src" -> artifact.url)

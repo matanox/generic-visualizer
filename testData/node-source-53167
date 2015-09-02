@@ -1,5 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-    val logger = ProcessLogger(
-      (o: String) => out.append(o),
-      (e: String) => err.append(e)

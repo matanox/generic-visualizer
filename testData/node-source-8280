@@ -1,5 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-trait Deserializer[+T, -A <: Artifact] extends PipelineStep {
-  def read(artifact: A): T
-}

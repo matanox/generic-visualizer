@@ -1,6 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
-
-    new StringSerializable[T] {
-      override def fromString(s: String): T = jsonFormat.read(s.parseJson)
-      override def toString(data: T): String = jsonFormat.write(data).compactPrint
-    }

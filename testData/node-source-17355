@@ -1,5 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
-
-  def write(data: Array[Byte]): Unit = {
-    out.write(data, 0, data.length)
-  }

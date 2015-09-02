@@ -1,5 +1,0 @@
-< from source file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-  override def rootOutputUrl =
-    config.get[String]("output.dir").map(s => new URI(s))
-      .getOrElse(new File(System.getProperty("user.dir")).toURI)
