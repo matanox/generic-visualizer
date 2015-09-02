@@ -1,0 +1,7 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+  case class CommandOutput(
+    returnCode: Int,
+    stdout: () => InputStream,
+    stderr: () => InputStream,
+    outputs: Map[String, () => InputStream]

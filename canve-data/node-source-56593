@@ -1,0 +1,13 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+    commandTokens.foreach {
+      case OutputFileToken(name) =>
+        val fOut = new File(scratchDir, name)
+        if (!fOut.exists()) {
+          val stCmd = cmd.mkString(" ")
+          throw new RuntimeException(
+            f"Script should have written an output file at:${fOut.getCanonicalPath}\n  command=$stCmd"
+          )
+        }
+      case _ =>
+    }

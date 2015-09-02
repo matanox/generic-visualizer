@@ -1,0 +1,53 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+class DirectoryArtifact(val dir: File) extends StructuredArtifact {
+  import org.allenai.pipeline.StructuredArtifact._
+  override def url: URI = dir.getCanonicalFile.toURI
+  private val parentDir = {
+    val f = dir.getCanonicalFile.getParentFile
+    require(
+      (f.exists && f.isDirectory) || f.mkdirs,
+      s"Unable to find or create directory $dir"
+    )
+    f
+  }
+  override def exists: Boolean = dir.exists && dir.isDirectory
+  override def reader: Reader = new Reader {
+    require(exists, s"Attempt to read for non-existent directory $dir")
+    /** Throw exception if file does not exist. */
+    def read(entryName: String): InputStream = new FileInputStream(new File(dir, entryName))
+    /** Read only read plain files (no recursive directory search). */
+    def readAll: Iterator[(String, InputStream)] = dir.listFiles.iterator.filterNot(
+      _.isDirectory
+    ).map(f => (f.getName, new FileInputStream(f)))
+  }
+  /** Writing to a directory is atomic, like other artifacts.
+    * However, if the directory already exists, it will be renamed as a backup.
+    */
+  override def write[T](writer: Writer => T): T = {
+    if (dir.exists) {
+      FileUtils.cleanDirectory(dir)
+    }
+    val tmpDir = createTempDirectory
+    val dirWriter = new Writer {
+      def writeEntry[T2](name: String)(writer: ArtifactStreamWriter => T2): T2 = {
+        val out = new FileOutputStream(new File(tmpDir, name))
+        val result = writer(new ArtifactStreamWriter(out))
+        out.close()
+        result
+      }
+    }
+    val result = writer(dirWriter)
+    require(tmpDir.renameTo(dir), s"Unable to create directory $dir")
+    result
+  }
+  private def createTempDirectory = {
+    val f = File.createTempFile(dir.getName, ".tmp", parentDir)
+    f.delete()
+    f.mkdir
+    val tmpDir = new File(f.getPath)
+    scala.sys.addShutdownHook(FileUtils.deleteDirectory(tmpDir))
+    tmpDir
+  }
+  override def toString: String = s"DirectoryArtifact[$dir]"
+}

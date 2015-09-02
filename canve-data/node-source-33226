@@ -1,0 +1,3 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+    override def toString(param: Float): String = param.toString

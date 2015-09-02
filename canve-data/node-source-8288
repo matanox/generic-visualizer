@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+
+object SingletonIo {
+  def text[T: StringSerializable: ClassTag](implicit codec: Codec): ArtifactIo[T, FlatArtifact] =
+    new SingletonIo[T]
+  def json[T: JsonFormat: ClassTag](implicit codec: Codec): ArtifactIo[T, FlatArtifact] = {
+    implicit val format: StringSerializable[T] = asStringSerializable(implicitly[JsonFormat[T]])
+    new SingletonIo[T]
+  }
+}

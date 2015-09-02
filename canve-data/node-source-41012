@@ -1,0 +1,3 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+
+      parameters = Map("charSet" -> codec.charSet.toString),

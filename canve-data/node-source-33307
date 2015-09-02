@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/CodeInfo.scala >
+
+  def parseRemote(remote: String): URI = {
+    remote match {
+      case sshRemotePattern(user, host, path) =>
+        val absPath = if (path.startsWith("/")) path else s"/$path"
+        new URI("https", host, absPath, null)
+      case x => new URI(x)
+    }
+  }

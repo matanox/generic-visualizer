@@ -1,0 +1,18 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+
+object Producer2 {
+  def unapply[T1, T2](
+    input: (Producer[(T1, T2)], (String, String))
+  ): Option[(Producer[T1], Producer[T2])] = {
+    val (p, (name1, name2)) = input
+    val p1 = p.copy(
+      create = () => p.get._1,
+      stepInfo = () => p.stepInfo.copy(className = s"${p.stepInfo.className}_$name1")
+    )
+    val p2 = p.copy(
+      create = () => p.get._2,
+      stepInfo = () => p.stepInfo.copy(className = s"${p.stepInfo.className}_$name2")
+    )
+    Some((p1, p2))
+  }
+}

@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  protected[this] def getStringList(key: String) =
+    config.get[String](key) match {
+      case Some(s) => List(s)
+      case None => config.get[Seq[String]](key) match {
+        case Some(sList) => sList
+        case None => List()
+      }
+    }

@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+    val dirWriter = new Writer {
+      def writeEntry[T2](name: String)(writer: ArtifactStreamWriter => T2): T2 = {
+        val out = new FileOutputStream(new File(tmpDir, name))
+        val result = writer(new ArtifactStreamWriter(out))
+        out.close()
+        result
+      }
+    }

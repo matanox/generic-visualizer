@@ -1,0 +1,31 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/MavenVersionId.scala >
+
+  def apply(versionId: String): Option[MavenVersionId] = {
+    versionRegex findFirstIn versionId match {
+      case Some(versionRegex(major, minor, incremental, suffix1, suffix2)) => try {
+        val (build: Option[Int], qualifier: Option[String]) = (suffix1, suffix2) match {
+          case (null, null) => (None, None)
+          case (s, null) => try {
+            (Some(s.toInt), None)
+          } catch {
+            case ex: NumberFormatException => (None, Some(s))
+          }
+          case (s1, s2) => try {
+            (Some(s1.toInt), Some(s2))
+          } catch {
+            case ex: NumberFormatException => (Some(s2.toInt), Some(s1))
+          }
+        }
+        Some(new MavenVersionId(
+          major.toInt,
+          if (minor == null) None else Some(minor.toInt),
+          if (incremental == null) None else Some(incremental.toInt),
+          build,
+          qualifier
+        ))
+      } catch {
+        case ex: NumberFormatException => None
+      }
+      case _ => None
+    }
+  }

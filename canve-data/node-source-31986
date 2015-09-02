@@ -1,0 +1,6 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+  implicit object LongToString extends StringSerializable[Long] {
+    override def fromString(s: String): Long = s.toLong
+    override def toString(param: Long): String = param.toString
+  }

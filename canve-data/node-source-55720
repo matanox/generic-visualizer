@@ -1,0 +1,5 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+    for ((name, data) <- inputs) {
+      StreamIo.write(data, new FileArtifact(new File(scratchDir, name)))
+    }

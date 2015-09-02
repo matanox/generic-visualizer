@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
+
+trait UrlToArtifact {
+  /** Return a PartialFunction indicating whether the given Artifact type can be created from an input URL
+    * @tparam A The Artifact type to be created
+    * @return A PartialFunction where isDefined will return true if an Artifact of type A can
+    *         be created from the given URL
+    */
+  def urlToArtifact[A <: Artifact: ClassTag]: PartialFunction[URI, A]
+}

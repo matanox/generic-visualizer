@@ -1,0 +1,22 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Signature.scala >
+
+object Signature {
+  implicit val jsonWriter: JsonWriter[Signature] = new JsonWriter[Signature] {
+    private val NAME = "name"
+    private val CODE_VERSION_ID = "codeVersionId"
+    private val DEPENDENCIES = "dependencies"
+    private val PARAMETERS = "parameters"
+    def write(s: Signature): JsValue = {
+      // Sort keys in dependencies and parameters so that json format is identical for equal objects
+      val deps = s.dependencies.toList.map(t => (t._1, jsonWriter.write(t._2.stepInfo.signature))).
+        sortBy(_._1).toJson
+      val params = s.parameters.toList.sortBy(_._1).toJson
+      JsObject(
+        (NAME, JsString(s.name)),
+        (CODE_VERSION_ID, JsString(s.unchangedSinceVersion)),
+        (DEPENDENCIES, deps),
+        (PARAMETERS, params)
+      )
+    }
+  }
+}

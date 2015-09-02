@@ -1,0 +1,10 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+  def apply[A <: FlatArtifact](artifact: A): Producer[() => InputStream] =
+    new Producer[() => InputStream] with Ai2SimpleStepInfo {
+      override def create = StreamIo.read(artifact)
+      override def stepInfo =
+        super.stepInfo.copy(className = "StaticResource")
+          .copy(outputLocation = Some(artifact.url))
+          .addParameters("src" -> artifact.url)
+    }

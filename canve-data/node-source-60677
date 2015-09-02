@@ -1,0 +1,15 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
+
+    object CollectionOfArrays {
+      def fromText[T: StringSerializable: ClassTag](
+        artifact: FlatArtifact,
+        sep: Char = '\t'
+      ): Producer[Iterable[Array[T]]] = {
+        val io = {
+          implicit val colFormat = columnArrayFormat[T](sep)
+          implicit val arrayClassTag = implicitly[ClassTag[T]].wrap
+          LineCollectionIo.text[Array[T]]
+        }
+        fromArtifact(io, artifact)
+      }
+    }

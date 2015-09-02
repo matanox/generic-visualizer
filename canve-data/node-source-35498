@@ -1,0 +1,4 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+
+  def addObject[T <: Product: ClassTag](
+    obj: T

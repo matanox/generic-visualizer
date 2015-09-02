@@ -1,0 +1,6 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+        Resource.using(artifact.read) { is =>
+          Iterator.continually(is.read(buffer)).takeWhile(_ != -1)
+            .foreach(n => buffer.take(n).foreach(b => hash = hash * 31 + b))
+        }

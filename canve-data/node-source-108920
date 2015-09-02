@@ -1,0 +1,4 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+
+        Iterator.continually(is.read(buffer)).takeWhile(_ != -1).foreach(n =>
+          os.write(buffer, 0, n))

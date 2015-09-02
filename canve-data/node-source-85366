@@ -1,0 +1,14 @@
+< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+    val (targets, isRunOnly) =
+      getStringList("runOnly") match {
+        case seq if seq.nonEmpty =>
+          (seq, true)
+        case _ =>
+          getStringList("runUntil") match {
+            case seq if seq.nonEmpty =>
+              (seq, false)
+            case _ =>
+              (persistedSteps.keys, false)
+          }
+      }
