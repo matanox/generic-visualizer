@@ -475,10 +475,11 @@ function onDataLoaded(callback) {
   //fireGraphDisplay(8464)
   //fireGraphDisplay(8250)
 
-  //listUnusedTypes(globalGraph).forEach(fireGraphDisplay)
-  unusedTypes = listUnusedTypes(globalGraph)
+  //getUnusedTypes(globalGraph).forEach(fireGraphDisplay)
+  unusedTypes = getUnusedTypes(globalGraph)
   console.log(unusedTypes.length + ' unused project types detected')
-  fireGraphDisplay(listUnusedTypes(globalGraph)[0])
+  console.log(unusedTypes)
+  fireGraphDisplay(unusedTypes[0])
 }
 
 // recursive removal of nodes owned by a given node, 
@@ -1483,46 +1484,79 @@ function d3Render(displayGraph) {
   })
 }
 
-function getMemberUsers(graph, nodeId) {
-  var users = []
-  graph.nodeEdges(function(edge) {
-    if (graph.edge(edge).edgeKind == 'uses')
-      if (edge.w == nodeId)
-        users.push(edge.v)
+function getMembers(graph, nodeId) {
+  return graph.nodeEdges(nodeId).filter(function(edge) {
+    return edge.v == nodeId &&
+           edge.edgeKind == 'declares member'
+  }).map(function(edge) {
+    return edge.w
   })
-  return users
+}
+
+function getUsers(graph, nodeId) {
+  return graph.nodeEdges(nodeId).filter(function(edge) {
+    return edge.w == nodeId &&
+           graph.edge(edge).edgeKind == 'uses' 
+  }).map(function(edge) {
+    return edge.v
+  })
 }
 
 // list unused types (unextended, uninstantiated, or having no members being used).
-function listUnusedTypes(graph) {
+function getUnusedTypes(graph) {
   
-  function isNodeUsed(nodeId) {
-    if (graph.node(nodeId).kind == 'class'  || 
-        graph.node(nodeId).kind == 'object' ||
-        graph.node(nodeId).kind == 'trait') {
-          var used = false
+  // this is a naive implementation that assumes 
+  // there is not a lot of type nesting -
+  // it doesn't try to avoid some repetition
 
-          graph.nodeEdges(nodeId).forEach(function(edge) {
-            if (edge.w == nodeId) {
-              if (graph.edge(edge).edgeKind == 'extends')    return true
-              if (graph.edge(edge).edgeKind == 'is of type') return true
-              if (graph.edge(edge).edgeKind == 'uses')       return true
-            }
-          }) 
-        }
-
-    return false
+  function isTypeNode(nodeId) {
+    return graph.node(nodeId).kind == 'class'  || 
+           graph.node(nodeId).kind == 'object' ||
+           graph.node(nodeId).kind == 'trait'
   }
 
-  var notUsed = []
+  function getTypeUsers(nodeId) {
+    // is anyone using it?
+    var users = 0
+    graph.nodeEdges(nodeId).forEach(function(edge) {
+      if (edge.w == nodeId) {
+        if (graph.edge(edge).edgeKind == 'extends')    users += 1
+        if (graph.edge(edge).edgeKind == 'is of type') users += 1
+        if (graph.edge(edge).edgeKind == 'uses')       users += 1
+      }
+    }) 
+
+    // is anyone using its subtypes if any?
+    graph.nodeEdges(nodeId).forEach(function(edge) {
+      if (edge.v == nodeId) {
+        if (graph.edge(edge).edgeKind == 'declares member')
+          if (isTypeNode(edge.w))
+            users += getTypeUsers(edge.w).length
+      }
+    }) 
+
+    // is it an object being used without "instantiation"?
+    // in such case should check if any of its members are being used,
+    // because the compiler will not indicate any other form of usage 
+    // in this case
+    if (graph.node(nodeId).kind == 'object')
+      getMembers(graph, nodeId).forEach(function(memberNode) {
+        users += getUsers(graph, memberNode).length
+      })
+
+    return users
+  }
 
   var projectNodes = graph.nodes().filter(function(nodeId) {
     return graph.node(nodeId).definition === 'project'
   })
 
-  projectNodes.forEach(function(nodeId) {
-    if (!isNodeUsed(nodeId)) notUsed.push(nodeId)
+  var projectTypeNodes = projectNodes.filter(function(nodeId) {
+    return isTypeNode(nodeId)
   })
 
-  return notUsed
+  return projectTypeNodes.filter(function(nodeId) {
+    return getTypeUsers(nodeId) == 0
+  })
+
 }
