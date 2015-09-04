@@ -83,7 +83,7 @@ document.onkeypress = function(evt) {
     getSelectedNodes().forEach(function(nodeId) {      
       removeNodeFromDisplay(nodeId)
     })
-    updateForceLayout(displayGraph)
+    updateForceLayout(displayGraph, true)
   }
 }
 
@@ -1340,13 +1340,23 @@ function initForceLayout() {
   })
 }
 
-// update the display with the display graph, 
-// by (re)joining the data with the display, the d3 way.
-// for a deliberation, see http://bost.ocks.org/mike/join/
-function updateForceLayout(displayGraph) {
+/* 
+ * update the display with the display graph, 
+ * by (re)joining the data with the display, the d3 way.
+ *
+ * for a deliberation see:
+ *   http://bost.ocks.org/mike/join/, and/or
+ *   http://www.jeromecukier.net/blog/2015/05/19/you-may-not-need-d3/
+ *                       
+ */
+function updateForceLayout(displayGraph, removals) {
 
-  d3Data = mapToD3(displayGraph)
+  // sync the d3 graph data structure from the graphlib one
+  d3Data = mapToD3(displayGraph) 
 
+  //
+  // the d3 (re)join ceremony...
+  //
   d3DisplayLinks = presentationSVG
                    .select(".links").selectAll(".link")
                    .data(d3Data.links, function(edge) { return edge.v + edge.w })
@@ -1485,25 +1495,31 @@ function updateForceLayout(displayGraph) {
                        .on('mouseover', null)
                        .on('mouseout', null)
 
-  d3DisplayNodes.exit().transition('showOrRemove').delay(1000)
-                       .duration(2500).ease('poly(2)')
+  d3DisplayNodes.exit().transition('showOrRemove').delay(500)
+                       .duration(1000).ease('poly(2)')
                        .style('fill-opacity', 0).style('stroke-opacity', 0).remove()
-  d3DisplayLinks.exit().transition('showOrRemove')
-                       .duration(0).style('stroke-opacity', 0).remove()
-  d3ExtensionArcs.exit().transition('showOrRemove')
-                       .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
+  d3ExtensionArcs.exit().transition('showOrRemove').delay(250)
+                       .duration(500).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
+  d3DisplayLinks.exit().transition('showOrRemove').delay(250)
+                       .duration(1000).style('stroke-opacity', 0).remove()
 
-  // bind the force layout to the d3 bindings (re)made above,
-  // and animate it.
-  forceLayout.nodes(d3Data.nodes)
-             .links(d3Data.links)
+  var forceResumeDelay = removals ? 1500 : 0
 
-  forceLayout.on("end", function() {
-    console.log('layout stable')
-  })
+  setTimeout(function () {
+     // bind the force layout to the d3 bindings (re)made above,
+    // and animate it.
+    forceLayout.nodes(d3Data.nodes)
+               .links(d3Data.links)
 
-  // fire away the animation of the force layout
-  forceLayout.start() 
+    forceLayout.on("end", function() {
+      console.log('layout stable')
+    })
+
+    //
+    // after the (re)join, fire away the animation of the force layout
+    //
+    forceLayout.start() 
+  }, forceResumeDelay)
 }
 
 function rewarmForceLayout() {
