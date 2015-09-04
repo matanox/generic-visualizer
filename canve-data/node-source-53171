@@ -1,0 +1,61 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+class ExternalProcess(val commandTokens: CommandToken*) {
+  def run(
+    inputs: Map[String, () => InputStream] = Map(),
+    stdinput: () => InputStream = () => new ByteArrayInputStream(Array.emptyByteArray)
+  ) = {
+    {
+      val inputNames = inputs.map(_._1).toSet
+      val inputTokenNames = commandTokens.collect { case InputFileToken(name) => name }.toSet
+      val unusedInputs = inputNames -- inputTokenNames
+      require(unusedInputs.size == 0, s"The following inputs are not used: [${unusedInputs.mkString(",")}}]")
+      val unboundTokens = inputTokenNames -- inputNames
+      require(unboundTokens.size == 0, s"The following input tokens were not found: [${unboundTokens.mkString(",")}}]")
+      val outputNames = commandTokens.collect { case OutputFileToken(name) => name }.toSet
+      require(inputNames.size == inputs.size, "Names of inputs must be unique")
+      require((inputNames ++ outputNames).size == inputs.size + outputNames.size, "Cannot share names between inputs and outputs")
+      require(((inputNames ++ outputNames) intersect Set("stderr", "stdout")).isEmpty, "Cannot use 'stderr' or 'stdout' for name")
+    }
+    val scratchDir = Files.createTempDirectory(null).toFile
+    sys.addShutdownHook(FileUtils.deleteDirectory(scratchDir))
+    for ((name, data) <- inputs) {
+      StreamIo.write(data, new FileArtifact(new File(scratchDir, name)))
+    }
+    import scala.sys.process._
+    val captureStdoutFile = new File(scratchDir, "stdout")
+    val captureStderrFile = new File(scratchDir, "stderr")
+    val out = new FileWriter(captureStdoutFile)
+    val err = new FileWriter(captureStderrFile)
+    val logger = ProcessLogger(
+      (o: String) => out.append(o),
+      (e: String) => err.append(e)
+    )
+    val cmd = commandTokens.map {
+      case InputFileToken(name) => new File(scratchDir, name).getCanonicalPath
+      case OutputFileToken(name) => new File(scratchDir, name).getCanonicalPath
+      case t => t.name
+    }
+    val status = (cmd #< stdinput()) ! logger
+    out.close()
+    err.close()
+    commandTokens.foreach {
+      case OutputFileToken(name) =>
+        val fOut = new File(scratchDir, name)
+        if (!fOut.exists()) {
+          val stCmd = cmd.mkString(" ")
+          throw new RuntimeException(
+            f"Script should have written an output file at:${fOut.getCanonicalPath}\n  command=$stCmd"
+          )
+        }
+      case _ =>
+    }
+    val outputNames = commandTokens.collect { case OutputFileToken(name) => name }
+    val outputStreams = for (name <- outputNames) yield {
+      (name, StreamIo.read(new FileArtifact(new File(scratchDir, name))))
+    }
+    val stdout = StreamIo.read(new FileArtifact(captureStdoutFile))
+    val stderr = StreamIo.read(new FileArtifact(captureStderrFile))
+    CommandOutput(status, stdout, stderr, outputStreams.toMap)
+  }
+}

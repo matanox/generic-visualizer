@@ -1,3 +1,4 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  def contentType: String = contentTypeOverride.getOrElse(defaultContentType)
+  val contentTypeOverride: Option[String] = None
+    extends StructuredArtifact with S3Artifact[ZipFileArtifact] {

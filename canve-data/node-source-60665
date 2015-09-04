@@ -1,0 +1,8 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/MavenVersionId.scala >
+
+    def compare(a: Option[Int], b: Option[Int]): Int = (a, b) match {
+      case (Some(v), None) => 1
+      case (None, Some(ov)) => -1 // Note:  version 1 < version 1.0
+      case (None, None) => 0
+      case (Some(v), Some(ov)) => v compareTo ov
+    }

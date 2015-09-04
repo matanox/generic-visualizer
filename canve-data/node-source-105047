@@ -1,6 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
-
-  override def read: InputStream = {
-    require(exists, s"Attempt to read from non-existent S3 location: $path")
-    getCachedArtifact.read
-  }

@@ -1,6 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
-
-  object Empty extends UrlToArtifact {
-    def urlToArtifact[A <: Artifact: ClassTag]: PartialFunction[URI, A] =
-      PartialFunction.empty[URI, A]
-  }

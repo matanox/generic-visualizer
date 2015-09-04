@@ -1,9 +1,4 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-case class S3Config(bucket: String, credentials: S3Credentials = S3Config.environmentCredentials()) {
-  @transient
-  lazy val service = {
-    val S3Credentials(accessKey, secretKey) = credentials
-    new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey))
-  }
-}
+  val contentTypeOverride: Option[String] = None
+    extends FlatArtifact with S3Artifact[FileArtifact] {

@@ -1,7 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/MavenVersionId.scala >
-
-  def versionId: String = s"""$major""" +
-    s"""${minor.map(i => s".$i").getOrElse("")}""" +
-    s"""${incremental.map(i => s".$i").getOrElse("")}""" +
-    s"""${build.map(i => s"-$i").getOrElse("")}""" +
-    s"""${qualifier.map(q => s"-$q").getOrElse("")}"""

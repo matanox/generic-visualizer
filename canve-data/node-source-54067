@@ -1,7 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
 
-  protected[this] def createAndTime: T = {
-    val (result, duration) = Timing.time(this.create)
-    timing = Some(duration)
-    result
-  }
+  protected[this] var executionMode: Duration => ExecutionInfo = Executed

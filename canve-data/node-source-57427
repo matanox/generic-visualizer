@@ -1,3 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
 
-    val stderr = new ExtractOutputComponent("stderr", _.stderr, processCmd, requireStatusCode)
+    val outputNames = commandTokens.collect { case OutputFileToken(name) => name }

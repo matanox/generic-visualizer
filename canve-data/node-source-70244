@@ -1,0 +1,9 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+    val nonExistentDependencies =
+      for {
+        p <- allDependencies if p.isInstanceOf[PersistedProducer[_, _]]
+        pp = p.asInstanceOf[PersistedProducer[_, _ <: Artifact]]
+        if !targetStepInfo(pp.stepInfo)
+        if !pp.artifact.exists
+      } yield pp.stepInfo

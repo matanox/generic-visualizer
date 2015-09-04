@@ -1,0 +1,3 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExecutionInfo.scala >
+
+  override def status = s"Computed and stored in ${formatDuration(duration)}"

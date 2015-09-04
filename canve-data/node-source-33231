@@ -1,3 +1,6 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
 
-    override def fromString(s: String): Long = s.toLong
+  implicit object DoubleToString extends StringSerializable[Double] {
+    override def fromString(s: String): Double = s.toDouble
+    override def toString(param: Double): String = param.toString
+  }

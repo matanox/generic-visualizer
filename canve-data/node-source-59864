@@ -1,3 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
 
-    val f = File.createTempFile(dir.getName, ".tmp", parentDir)
+    val result = writer(dirWriter)

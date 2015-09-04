@@ -1,3 +1,19 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
 
+    new Producer[() => InputStream] with Ai2SimpleStepInfo {
+      lazy val contentHash = {
+        var hash = 0L
+        val buffer = new Array[Byte](16384)
+        Resource.using(artifact.read) { is =>
+          Iterator.continually(is.read(buffer)).takeWhile(_ != -1)
+            .foreach(n => buffer.take(n).foreach(b => hash = hash * 31 + b))
+        }
+        hash.toHexString
+      }
       override def create = StreamIo.read(artifact)
+      override def stepInfo =
+        super.stepInfo.addParameters("contentHash" -> contentHash)
+          .copy(className = "DynamicResource")
+          .copy(outputLocation = Some(artifact.url))
+          .addParameters("src" -> artifact.url)
+    }

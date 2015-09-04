@@ -1,3 +1,8 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  protected var cachedFile: Option[A] = None
+  def defaultContentType: String = path match {
+    case s if s.endsWith(".html") => "text/html"
+    case s if s.endsWith(".txt") => "text/plain"
+    case s if s.endsWith(".json") => "application/json"
+    case _ => "application/octet-stream"
+  }

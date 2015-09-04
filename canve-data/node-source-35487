@@ -1,3 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
 
-    dependencies: Map[String, PipelineStep] = Map(),
+    binaryUrl: Option[URI] = None,

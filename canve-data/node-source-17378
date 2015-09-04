@@ -1,0 +1,6 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+
+  def println(s: String): Unit = {
+    write(s)
+    out.write('\n')
+  }

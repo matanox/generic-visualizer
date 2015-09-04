@@ -339,11 +339,12 @@ function loadNodes(callback){
           node.displayName = node.kind + ' ' + node.name
 
         bbox = calcBBox(node)
-        globalGraph.setNode(node.id, { name:        node.name, 
-                                       kind:        node.kind, 
-                                       displayName: node.displayName,
-                                       definition:  node.definition,
-                                       textBbox:    bbox })
+        globalGraph.setNode(node.id, { name:         node.name, 
+                                       kind:         node.kind, 
+                                       displayName:  node.displayName,
+                                       notSynthetic: node.notSynthetic,
+                                       definition:   node.definition,
+                                       textBbox:     bbox })
 
       })
 

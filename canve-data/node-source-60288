@@ -1,8 +1,8 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
 
-    object Iterator {
-      def fromText[T: StringSerializable: ClassTag](artifact: FlatArtifact): Producer[Iterator[T]] =
-        fromArtifact(LineIteratorIo.text[T], artifact)
-      def fromJson[T: JsonFormat: ClassTag](artifact: FlatArtifact): Producer[Iterator[T]] =
-        fromArtifact(LineIteratorIo.json[T], artifact)
+    object Singleton {
+      def fromText[T: StringSerializable: ClassTag](artifact: FlatArtifact): Producer[T] =
+        fromArtifact(SingletonIo.text[T], artifact)
+      def fromJson[T: JsonFormat: ClassTag](artifact: FlatArtifact): Producer[T] =
+        fromArtifact(SingletonIo.json[T], artifact)
     }

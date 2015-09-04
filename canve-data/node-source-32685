@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+
+  def toString(param: T): String
+    extends ArtifactIo[T, FlatArtifact]
+    with Ai2SimpleStepInfo {

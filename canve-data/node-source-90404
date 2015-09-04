@@ -1,17 +1,8 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
 
-    val returnValue =
-      if (!cachingEnabled) {
-        logger.debug(s"$className caching disabled, recomputing")
-        createAndTime
-      } else if (!initialized) {
-        logger.debug(s"$className computing value")
-        initialized = true
-        cachedValue
-      } else if (!cachedValue.isInstanceOf[Iterator[_]]) {
-        logger.debug(s"$className reusing cached value")
-        cachedValue
-      } else {
-        logger.debug(s"$className recomputing value of type Iterator")
-        createAndTime
-      }
+    new Producer[T2] {
+      override def create: T2 = _create()
+      override def stepInfo = _stepInfo()
+      override def cachingEnabled = _cachingEnabled()
+      override def executionInfo = _executionInfo()
+    }

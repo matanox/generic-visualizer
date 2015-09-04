@@ -1,0 +1,3 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+      val outputNames = commandTokens.collect { case OutputFileToken(name) => name }.toSet

@@ -1,3 +1,6 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
 
-    val sources = sourceNodes()
+  def sinkNodes() = nodes.filter {
+    case (nodeId, node) =>
+      !links.exists(link => link.fromId == nodeId)
+  }

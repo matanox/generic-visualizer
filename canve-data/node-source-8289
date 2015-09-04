@@ -1,18 +1,22 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
 
-class LineCollectionIo[T: StringSerializable: ClassTag](implicit codec: Codec)
-    extends ArtifactIo[Iterable[T], FlatArtifact] with Ai2SimpleStepInfo {
-  private val delegate = new LineIteratorIo[T]
-  override def read(artifact: FlatArtifact): Iterable[T] =
-    delegate.read(artifact).toList
-  override def write(data: Iterable[T], artifact: FlatArtifact): Unit =
-    delegate.write(data.iterator, artifact)
+class SingletonIo[T: StringSerializable: ClassTag](implicit codec: Codec)
+    extends ArtifactIo[T, FlatArtifact]
+    with Ai2SimpleStepInfo {
+  override def read(artifact: FlatArtifact): T = {
+    Resource.using(Source.fromInputStream(artifact.read)) { src =>
+      implicitly[StringSerializable[T]].fromString(src.mkString)
+    }
+  }
+  override def write(data: T, artifact: FlatArtifact): Unit = artifact.write {
+    _.write(implicitly[StringSerializable[T]].toString(data))
+  }
   override def stepInfo: PipelineStepInfo = {
     val className = scala.reflect.classTag[T].runtimeClass.getSimpleName
     super.stepInfo.copy(
-      className = s"ReadCollection[$className]",
+      className = s"ReadObject[$className]",
       parameters = Map("charSet" -> codec.charSet.toString),
-      description = Some(s"Read collection of [$className] into memory")
+      description = Some(s"Read [$className] into memory")
     )
   }
 }

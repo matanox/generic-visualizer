@@ -1,5 +1,7 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
 
+object DynamicResource {
+  def apply(artifact: FlatArtifact): Producer[() => InputStream] =
     new Producer[() => InputStream] with Ai2SimpleStepInfo {
       lazy val contentHash = {
         var hash = 0L
@@ -17,3 +19,4 @@
           .copy(outputLocation = Some(artifact.url))
           .addParameters("src" -> artifact.url)
     }
+}

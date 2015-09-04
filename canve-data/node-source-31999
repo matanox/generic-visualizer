@@ -1,0 +1,4 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+  def columnArrayFormat[T: StringSerializable: ClassTag](
+    sep: Char = '\t'

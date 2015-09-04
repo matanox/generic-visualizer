@@ -1,3 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  protected def makeLocalArtifact(f: File) = new FileArtifact(f)
+  val config: S3Config,

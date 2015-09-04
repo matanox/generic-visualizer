@@ -1,6 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-class S3ZipArtifact(
-  val path: String,
   val config: S3Config,
-  val contentTypeOverride: Option[String] = None

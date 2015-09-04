@@ -1,6 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
 
-  implicit object FloatToString extends StringSerializable[Float] {
-    override def fromString(s: String): Float = s.toFloat
-    override def toString(param: Float): String = param.toString
-  }
+    override def toString(param: Boolean): String = param.toString

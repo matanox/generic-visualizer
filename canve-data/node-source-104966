@@ -1,3 +1,6 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  override def toString: String = s"S3ZipArtifact[${config.bucket}, $path}]"
+  override def reader: Reader = {
+    require(exists, s"Attempt to read from non-existent S3 location: $path")
+    getCachedArtifact.reader
+  }

@@ -1,3 +1,5 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/SaveToArtifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ReadFromArtifact.scala >
 
-    input: Producer[T],
+case class ReadFromArtifact[T, A <: Artifact](
+    reader: Deserializer[T, A],
+    artifact: A

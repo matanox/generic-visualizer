@@ -1,3 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-    columnFormat4(Tuple4.apply[T1, T2, T3, T4], sep)

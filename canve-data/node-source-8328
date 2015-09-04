@@ -1,5 +1,5 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExecutionInfo.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExecutionInfo.scala >
 
-case class ExecuteAndBufferStream(duration: Duration) extends ExecutionInfo {
-  override def status = s"Computed and buffered in ${formatDuration(duration)}"
+case class ReadFromDisk(duration: Duration) extends ExecutionInfo {
+  override def status = s"Read in ${formatDuration(duration)}"
 }

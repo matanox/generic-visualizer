@@ -1,0 +1,16 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+
+  def copyTo(other: StructuredArtifact): Unit = {
+    other.write { writer =>
+      for ((name, is) <- reader.readAll) {
+        // scalastyle:off
+        val buffer = new Array[Byte](16384)
+        // scalastyle:on
+        writer.writeEntry(name) { entryWriter =>
+          Iterator.continually(is.read(buffer)).takeWhile(_ != -1).foreach(n => entryWriter.
+            write(buffer, 0, n))
+          is.close()
+        }
+      }
+    }
+  }

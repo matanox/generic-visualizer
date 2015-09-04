@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Pipeline.scala >
+
+  def apply(
+    rootUrl: URI,
+    awsCredentials: S3Credentials = S3Config.environmentCredentials()

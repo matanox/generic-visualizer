@@ -1,12 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  override def exists: Boolean = {
-    val result = try {
-      service.getObjectMetadata(config.bucket, path)
-      true
-    } catch {
-      case e: AmazonServiceException if e.getStatusCode == 404 => false
-      case ex: Exception => throw ex
-    }
-    result
-  }
+  val service = config.service

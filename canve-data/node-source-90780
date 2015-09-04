@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+
+    val p4 = p.copy(
+      create = () => p.get._4,
+      stepInfo = () => p.stepInfo.copy(className = s"${p.stepInfo.className}_$name4")

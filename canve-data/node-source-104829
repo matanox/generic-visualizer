@@ -1,3 +1,10 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  private val BUFFER_SIZE = 1048576
+  protected def upload(file: File): Unit = {
+    logger.debug(s"Uploading $file to $bucket/$path")
+    val metadata = new ObjectMetadata()
+    metadata.setContentType(contentType)
+    val request = new PutObjectRequest(bucket, path, file).withMetadata(metadata)
+    request.setCannedAcl(CannedAccessControlList.PublicRead)
+    service.putObject(request)
+  }

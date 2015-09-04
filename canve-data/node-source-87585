@@ -1,5 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
 
-    copy(
       parameters = this.parameters ++ otherPars.map { case (n, v) => (n, String.valueOf(v)) }.toMap,
-      dependencies = this.dependencies ++ pipelineSteps.toMap

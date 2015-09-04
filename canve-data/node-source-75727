@@ -1,5 +1,17 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
 
+case class Workflow(nodes: Map[String, Node], links: Iterable[Link]) {
+  def sourceNodes() = nodes.filter {
+    case (nodeId, node) =>
+      !links.exists(link => link.toId == nodeId)
+  }
+  def sinkNodes() = nodes.filter {
+    case (nodeId, node) =>
+      !links.exists(link => link.fromId == nodeId)
+  }
+  def errorNodes() = nodes.filter {
+    case (nodeId, node) => node.outputMissing
+  }
   lazy val renderHtml: String = {
     import Workflow._
     //    val w = this
@@ -58,3 +70,4 @@
     val outputNodeHtml = outputNodeLinks.map("<li>" + _ + "</li>").mkString("<ul>", "\n", "</ul>")
     template.format(outputNodeHtml, addNodes.mkString("\n\n"), addEdges.mkString("\n\n"))
   }
+}

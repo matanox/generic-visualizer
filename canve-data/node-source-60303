@@ -1,7 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ReadFromArtifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ReadFromArtifact.scala >
 
-  def create: T = {
-    executionMode = ReadFromDisk
-    require(artifact.exists, s"$artifact does not exist")
-    reader.read(artifact)
-  }
+    reader: Deserializer[T, A],

@@ -1,5 +1,9 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
 
-  def write(data: Array[Byte], offset: Int, size: Int): Unit = {
-    out.write(data, offset, size)
-  }
+    other.write { writer =>
+      val buffer = new Array[Byte](BUFFER_SIZE)
+      Resource.using(read) { is =>
+        Iterator.continually(is.read(buffer)).takeWhile(_ != -1).foreach(n =>
+          writer.write(buffer, 0, n))
+      }
+    }

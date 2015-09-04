@@ -1,0 +1,8 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+
+  override def write(data: Iterator[T], artifact: FlatArtifact): Unit = {
+    artifact.write { w =>
+      for (d <- data)
+        w.println(format.toString(d))
+    }
+  }

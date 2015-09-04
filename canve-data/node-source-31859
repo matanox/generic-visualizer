@@ -1,8 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
 
-  override def write[T](writer: Writer => T): T = {
-    val w = new ZipFileWriter(file)
-    val result = writer(w)
-    w.close()
-    result
-  }
+  override def url: URI = file.getCanonicalFile.toURI

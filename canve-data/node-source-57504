@@ -1,13 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
 
-    override protected def create: () => InputStream = {
-      val result = processCmd.get
-      result match {
-        case CommandOutput(status, _, _, _) if requireStatusCode.toSet.contains(status) =>
-          f(result)
-        case CommandOutput(status, _, stderr, _) =>
-          val stderrString = IOUtils.readLines(stderr()).asScala.take(100)
-          sys.error(s"Command ${processCmd.stepInfo.parameters("cmd")} failed with status$status: $stderrString")
-      }
-      f(processCmd.get)
-    }
+      f: CommandOutput => () => InputStream,

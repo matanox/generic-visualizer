@@ -1,0 +1,7 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
+
+        val io = {
+          implicit val colFormat = columnArrayFormat[T](sep)
+          implicit val arrayClassTag = implicitly[ClassTag[T]].wrap
+          LineCollectionIo.text[Array[T]]
+        }

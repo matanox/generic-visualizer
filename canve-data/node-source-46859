@@ -1,0 +1,8 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+    override def toString(t: T): String = {
+      List(
+        p1Parser.toString(t.productElement(0).asInstanceOf[P1]),
+        p2Parser.toString(t.productElement(1).asInstanceOf[P2])
+      ).mkString(sep.toString)
+    }

@@ -1,3 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
-
-      new ProducerWithPersistence(original, io, artifact) with CachingDisabled

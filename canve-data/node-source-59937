@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+    def readAll: Iterator[(String, InputStream)] = {
+      for (entry <- zipFile.entries.asScala) yield (entry.getName, zipFile.getInputStream(entry))
+    }

@@ -1,0 +1,9 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
+
+  override def withCachingEnabled: Producer[T] = {
+    if (cachingEnabled) {
+      this
+    } else {
+      new ProducerWithPersistence(original, io, artifact) with CachingEnabled
+    }
+  }

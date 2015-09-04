@@ -1,5 +1,10 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
 
-  protected def hashId[T, A <: Artifact](
-    p: Producer[T],
-    io: Serializer[T, A] with Deserializer[T, A]
+  def getStepsByName(targetNames: Iterable[String]) = {
+    val targets = targetNames.flatMap(s => steps.get(s).map(p => (s, p)))
+    if (targets.size != targetNames.size) {
+      val unresolveNames = targetNames.filterNot(steps.contains)
+      sys.error(s"Step names not found: ${unresolveNames.mkString("[", ",", "]")}")
+    }
+    targets
+  }

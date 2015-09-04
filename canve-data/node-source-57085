@@ -1,0 +1,13 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+  override def stepInfo = {
+    val cmd = commandTokens.map {
+      case InputFileToken(name) => s"<$name>"
+      case OutputFileToken(name) => s"<$name>"
+      case t => t.name
+    }
+    super.stepInfo
+      .copy(className = "ExternalProcess")
+      .addParameters(parameters: _*)
+      .addParameters("cmd" -> cmd.mkString(" "))
+  }

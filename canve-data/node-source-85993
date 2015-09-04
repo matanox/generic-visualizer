@@ -1,6 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-          new ProducerWithPersistence(original, io, createOutputArtifact[A]("save-disabled")) {
-            override def create = original.get
-            override def stepInfo = original.stepInfo
-          }

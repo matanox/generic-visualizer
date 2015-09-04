@@ -1,0 +1,7 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
+
+    val cmd = commandTokens.map {
+      case InputFileToken(name) => s"<$name>"
+      case OutputFileToken(name) => s"<$name>"
+      case t => t.name
+    }

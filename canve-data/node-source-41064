@@ -1,3 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-      Source.fromInputStream(is).getLines().map(s => format.fromString(s))

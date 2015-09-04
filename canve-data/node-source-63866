@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  def runOnly(title: String, targetNames: String*): Iterable[(String, Any)] = {
+    runOnly(title, targetNames)
+  }

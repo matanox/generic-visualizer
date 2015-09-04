@@ -1,9 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-  ): StringSerializable[Array[T]] = new StringSerializable[Array[T]] {
-    val p = compile(sep)
-    val colParser = implicitly[StringSerializable[T]]
-    override def fromString(line: String): Array[T] = p.split(line, -1).map(colParser.fromString)
-    override def toString(arr: Array[T]): String = arr.map(colParser.toString).mkString(sep
-      .toString)
-  }

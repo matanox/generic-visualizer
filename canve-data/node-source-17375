@@ -1,3 +1,5 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
 
-  private def asUTF8(s: String): Array[Byte] = s.getBytes(StandardCharsets.UTF_8)
+  def write(data: Array[Byte]): Unit = {
+    out.write(data, 0, data.length)
+  }

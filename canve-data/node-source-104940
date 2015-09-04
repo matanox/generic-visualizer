@@ -1,8 +1,3 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/S3Artifact.scala >
 
-  def environmentCredentials(): S3Credentials = {
-    val credentials = new EnvironmentVariableCredentialsProvider().getCredentials
-    val accessKey = credentials.getAWSAccessKeyId
-    val secretKey = credentials.getAWSSecretKey
-    new S3Credentials(accessKey, secretKey)
-  }
+case class S3Credentials(accessKey: String, secretKey: String)

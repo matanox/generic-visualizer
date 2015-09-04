@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+  def columnFormat[P1, T <: Product](construct: (P1) => T)(
+    implicit
+    p1Parser: StringSerializable[P1]

@@ -1,3 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/CodeInfo.scala >
-
-        val absPath = if (path.startsWith("/")) path else s"/$path"

@@ -1,0 +1,33 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  protected[this] def runPipelineReturnResults(rawTitle: String, targetNames: Iterable[String]): Iterable[(String, Any)] = {
+    // Order the outputs so that the ones with the fewest dependencies are executed first
+    val targets = getStepsByName(targetNames)
+    val outputs = targets.toVector.map {
+      case (name, p) => (Workflow.upstreamDependencies(p).size, name, p)
+    }.sortBy(_._1).map { case (count, name, p) => (name, p) }
+    val result: Seq[(String, Any)] = try {
+      val start = System.currentTimeMillis
+      val result = outputs.map { case (name, p) => (name, p.get) }
+      val duration = (System.currentTimeMillis - start) / 1000.0
+      logger.info(f"Ran pipeline in $duration%.3f s")
+      result
+    } catch {
+      case NonFatal(e) =>
+        logger.error("Untrapped exception", e)
+        List()
+    }
+    val title = rawTitle.replaceAll("""\s+""", "-")
+    val today = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
+    val workflowArtifact = createOutputArtifact[FlatArtifact](s"summary/$title-$today.workflow.json")
+    val workflow = Workflow.forPipeline(persistedSteps, targetNames)
+    SingletonIo.json[Workflow].write(workflow, workflowArtifact)
+    val htmlArtifact = createOutputArtifact[FlatArtifact](s"summary/$title-$today.html")
+    SingletonIo.text[String].write(workflow.renderHtml, htmlArtifact)
+    val signatureArtifact = createOutputArtifact[FlatArtifact](s"summary/$title-$today.signatures.json")
+    val signatureFormat = Signature.jsonWriter
+    val signatures = targetNames.map { s => signatureFormat.write(steps(s).stepInfo.signature) }.toList.toJson
+    signatureArtifact.write { writer => writer.write(signatures.prettyPrint) }
+    logger.info(s"Summary written to ${toHttpUrl(htmlArtifact.url)}")
+    result
+  }

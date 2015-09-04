@@ -1,0 +1,3 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
+
+    override def fromString(line: String): Array[T] = p.split(line, -1).map(colParser.fromString)

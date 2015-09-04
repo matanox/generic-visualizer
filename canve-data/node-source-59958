@@ -1,0 +1,8 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+
+    def writeEntry[T](name: String)(writer: ArtifactStreamWriter => T): T = {
+      zipOut.putNextEntry(new ZipEntry(name))
+      val result = writer(out)
+      zipOut.closeEntry()
+      result
+    }

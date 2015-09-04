@@ -1,0 +1,5 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
+
+  protected def hashId[T, A <: Artifact](
+    p: Producer[T],
+    io: Serializer[T, A] with Deserializer[T, A]

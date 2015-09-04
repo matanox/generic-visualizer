@@ -1,3 +1,27 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/FileArtifact.scala >
 
+class FileArtifact(val file: File) extends FlatArtifact {
+  private val parentDir = {
+    val f = file.getCanonicalFile.getParentFile
+    FileUtils.forceMkdir(f)
+    f
+  }
+  override def exists: Boolean = file.exists
   override def url: URI = file.getCanonicalFile.toURI
+  // Caller is responsible for closing the InputStream.
+  // Unfortunately necessary to support streaming
+  def read: InputStream = new FileInputStream(file)
+  // Note:  The write operation is atomic.  The file is only created if the write operation
+  // completes successfully
+  def write[T](writer: ArtifactStreamWriter => T): T = {
+    val tmpFile = File.createTempFile(file.getName, "tmp", parentDir)
+    tmpFile.deleteOnExit()
+    val fileOut = new FileOutputStream(tmpFile)
+    val out = new ArtifactStreamWriter(fileOut)
+    val result = writer(out)
+    fileOut.close()
+    require(tmpFile.renameTo(file), s"Unable to create $file")
+    result
+  }
+  override def toString: String = s"FileArtifact[${file.getCanonicalPath}]"
+}

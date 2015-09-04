@@ -1,5 +1,8 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/CreateCoreArtifacts.scala >
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/CreateCoreArtifacts.scala >
 
+  def fromS3Urls(credentials: => S3Credentials) = new UrlToArtifact {
+    def urlToArtifact[A <: Artifact: ClassTag]: PartialFunction[URI, A] = {
+      val c = implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]
       val fn: PartialFunction[URI, A] = {
         case url if c.isAssignableFrom(classOf[S3FlatArtifact])
           && List("s3", "s3n").contains(url.getScheme) =>
@@ -12,3 +15,6 @@
           val path = url.getPath.dropWhile(_ == '/')
           new S3ZipArtifact(path, S3Config(bucket, credentials)).asInstanceOf[A]
       }
+      fn
+    }
+  }

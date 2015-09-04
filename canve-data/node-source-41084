@@ -1,0 +1,4 @@
+< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
+
+      for (d <- data)
+        w.println(format.toString(d))

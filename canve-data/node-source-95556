@@ -1,5 +1,0 @@
-< in file /repos/cae/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-    val template = Resource.using(Source.fromURL(resourceUrl)) { source =>
-      source.mkString
-    }
