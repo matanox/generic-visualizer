@@ -1301,20 +1301,24 @@ function initForceLayout() {
   presentationSVG.append("g").attr("class", "extensionArcs") 
   presentationSVG.append("g").attr("class", "nodes") 
 
+  // the force layout definition, including those behaviours of it,
+  // that are kept constant throughout the program.
   forceLayout = d3.layout.force()
                          .gravity(0.4)
                          .linkDistance(20)
                          .charge(-150)
                          .on("tick", tick)
+                         .on("end", function() { console.log('layout stable') })
 
   drag = forceLayout.drag()
-  .on('dragstart', function (d) { 
+  
+  drag.on('dragstart', function (d) { 
     dragStartMouseCoords = d3.mouse(presentationSVG.node())
 
     //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
   })
 
-  .on('dragend', function (node) { 
+  drag.on('dragend', function (node) { 
     // determine d3 drag-end v.s. a click, by mouse movement
     // (this is the price of using the d3 drag event, 
     //  see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
@@ -1348,19 +1352,29 @@ function initForceLayout() {
  *   http://bost.ocks.org/mike/join/, and/or
  *   http://www.jeromecukier.net/blog/2015/05/19/you-may-not-need-d3/
  *                       
+ * Note: yes, we do need to do all of this every time the data updates.
+ *       given most of it are callback definitions, this isn't egregiously wasteful,
+ *       and the little leeway for optimization is superfluous.
+ *
  */
 function updateForceLayout(displayGraph, removals) {
 
+  //
   // sync the d3 graph data structure from the graphlib one
+  //
   d3Data = mapToD3(displayGraph) 
 
   //
-  // the d3 (re)join ceremony...
+  // the d3 (re)join
   //
   d3DisplayLinks = presentationSVG
                    .select(".links").selectAll(".link")
                    .data(d3Data.links, function(edge) { return edge.v + edge.w })
 
+  //
+  // the rest of the d3 (re)join ceremony... handling entering and exiting elements,
+  // and defining the callbacks over the elements
+  //
   d3DisplayLinks
       .enter().append("polyline")
       .attr("class", "link")
@@ -1503,21 +1517,18 @@ function updateForceLayout(displayGraph, removals) {
   d3DisplayLinks.exit().transition('showOrRemove').delay(250)
                        .duration(1000).style('stroke-opacity', 0).remove()
 
+  //
+  // defer the resumption of the force simulation, when 
+  // it visually-cognitively makes sense
+  //
   var forceResumeDelay = removals ? 1500 : 0
-
   setTimeout(function () {
-     // bind the force layout to the d3 bindings (re)made above,
+    // bind the force layout to the d3 bindings (re)made above,
     // and animate it.
     forceLayout.nodes(d3Data.nodes)
                .links(d3Data.links)
 
-    forceLayout.on("end", function() {
-      console.log('layout stable')
-    })
-
-    //
     // after the (re)join, fire away the animation of the force layout
-    //
     forceLayout.start() 
   }, forceResumeDelay)
 }
