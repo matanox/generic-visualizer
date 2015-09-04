@@ -5,9 +5,11 @@ var height
 var presentationSVGWidth 
 var presentationSVGHeight
 
-function windowResizeHandler() {
+function windowSizeAdapter() {
   width = window.innerWidth
   height = window.innerHeight
+
+  console.log('viewport dimensions: ' + width + ' x ' + height)
 
   //
   // Chrome may add an extra pixel beyond the screen dimension on either axis, upon zoom, 
@@ -17,7 +19,7 @@ function windowResizeHandler() {
   // necessarily visible, wasting a lot of viewport space and attention for just one pixel.
   //
   // We bypass all that by using one pixel less than what the viewport size initially is -
-  // in both axis dimensions.b
+  // in both axis dimensions.
   //
 
   presentationSVGWidth = width -1   
@@ -26,15 +28,16 @@ function windowResizeHandler() {
   presentationSVG.attr('width', presentationSVGWidth)
                  .attr('height', presentationSVGHeight)
 
+  forceLayout.size([presentationSVGWidth, presentationSVGHeight])
 }
 
 var sphereFontSize = 12 // implying pixel size
 
 var interactionState = {
-                         longStablePressEnd: false,
-                         ctrlDown: false,
-                         searchDialogEnabled: false
-                       }
+  longStablePressEnd: false,
+  ctrlDown: false,
+  searchDialogEnabled: false
+}
 
 var awesompleteContainerDiv = document.getElementById("awesompleteContainer")
 
@@ -73,14 +76,14 @@ document.onkeypress = function(evt) {
     getSelectedNodes().forEach(function(nodeId) {
       addNodeNeighbors(displayGraph, nodeId, 1)
     })
-    d3Render(displayGraph)
+    updateForceLayout(displayGraph)
   }
 
   if (evt.keyCode == 45) { // minus key
     getSelectedNodes().forEach(function(nodeId) {      
       removeNodeFromDisplay(nodeId)
     })
-    d3Render(displayGraph)
+    updateForceLayout(displayGraph)
   }
 }
 
@@ -102,9 +105,6 @@ document.onkeyup = function(evt) {
   }
 }
 
-
-console.log('viewport dimensions: ' + width + ', ' + height)
-
 // create svg for working out dimensions necessary for rendering labels' text
 var hiddenSVG = d3.select('body').append('svg:svg').attr('width', 0).attr('height', 0)
 
@@ -115,7 +115,8 @@ var svgText   = hiddenSVG.append('svg:text')
 
 var presentationSVG = d3.select('body').append('svg:svg').style('position', 'aboslute').style('z-index', 0)
   
-windowResizeHandler()
+initForceLayout()   
+windowSizeAdapter()
 
 function experimentalFishEyeIntegration() {
   // Note: this feels a little jerky, maybe tweening is required
@@ -447,8 +448,6 @@ function initRadii() {
 }
 
 function onDataLoaded(callback) {
-  //if (Object.keys(sourceMap).length != globalGraph.nodes().length)
-  //  console.warn('number of sources does not equal the number of nodes')
 
   console.log('data loading done')
 
@@ -456,18 +455,16 @@ function onDataLoaded(callback) {
   
   debugListSpecialNodes() // show what special nodes still slip through the filters
 
-  initRadii()
+  console.log('data filters applied')  
 
-  console.log('data filters applied')
+  initRadii()
 
   displayGraph = new dagre.graphlib.Graph({ multigraph: true}); // directed graph, allowing multiple edges between two nodes
   displayGraph.setGraph({}) 
 
-  d3ForceLayoutInit()
-
   window.onresize = function() {
-    windowResizeHandler()
-    d3Render(displayGraph)
+    windowSizeAdapter()
+    rewarmForceLayout()
   }
 
   initAwesomplete()
@@ -478,7 +475,7 @@ function onDataLoaded(callback) {
 
   //getUnusedTypes(globalGraph).forEach(fireGraphDisplay)
   unusedTypes = getUnusedTypes(globalGraph)
-  console.log(unusedTypes.length + ' unused project types detected')
+  console.log(unusedTypes.length + ' unused project types detected:')
   console.log(unusedTypes)
   fireGraphDisplay(unusedTypes[0])
 }
@@ -825,6 +822,7 @@ function removeNodeFromDisplay(nodeId) {
 function addNodeToDisplay(id) {
   if (displayGraph.node(id) === undefined) {   
     var node = globalGraph.node(id)
+    node.id              = id
     node.expandStatus    = 'collapsed'
     node.selectStatus    = 'unselected'
     node.highlightStatus = 'unhighlighted'
@@ -835,7 +833,6 @@ function addNodeToDisplay(id) {
 // add node neighbors and render them
 function addAndRenderNeighbors(graph, id, degree) {
   addNodeNeighbors(displayGraph, node.id, 1)
-  d3Render(displayGraph)
 }
 
 // add node neighbors to display graph
@@ -859,7 +856,7 @@ function addNodeNeighbors(graph, id, degree) {
   })
 }
 
-function getNodeEnvGraph(id, degree) {
+function addNodeEnv(id, degree) {
 
   // this is a naive implementation meant for very small values of degree.
   // for any humbly large degree, this needs to be re-implemented for efficient Big O(V,fembelish),
@@ -905,9 +902,7 @@ function computeCirclePack(hierarchy) {
 // compute circle graph
 function fireGraphDisplay(nodeId) {
 
-  //if (displayGraph.node(nodeId) === undefined) {
-  console.log('not yet defined')
-  getNodeEnvGraph(nodeId, 1) 
+  addNodeEnv(nodeId, 1) 
 
   // this creates a dagre initial layout that is unfortunately 
   // not bound to the window's viewport but may
@@ -921,7 +916,7 @@ function fireGraphDisplay(nodeId) {
 
   // computeCirclePack(dispyChain(nodeId)) // we don't do anything with it right now
 
-  d3Render(displayGraph)
+  //d3Render(displayGraph)
 
   // do the following both whether the node was already on the display or not
 
@@ -933,8 +928,11 @@ function fireGraphDisplay(nodeId) {
     .each('end', function() { 
       adjustedNodeRimVisualization(node, 2000)
     })
-  
+
+  updateForceLayout(displayGraph)
+
   if (node.expandStatus === 'collapsed') expandNode(node)
+
 }
 
 function initAwesomplete() {
@@ -1013,6 +1011,9 @@ function mapToD3(displayGraph) {
   // other than that we pass on properties appended to the graphlib representation,
   // currently only the initial dagre computed initial location 
   //
+
+  console.log("mapping display graph to d3 data")
+
   nodeIdIndex = {}
 
   var nodes = displayGraph.nodes().map(function(id, index) {
@@ -1039,56 +1040,6 @@ function mapToD3(displayGraph) {
   return { nodes, links }
 }
 
-var d3Data = { nodes:[], links:[] }
-
-function d3ForceLayoutInit() {
-
-  // svg hooks for the content (separate hooks allow controlling for render "z-order")
-  presentationSVG.append("g").attr("class", "links") 
-  presentationSVG.append("g").attr("class", "extensionArcs") 
-  presentationSVG.append("g").attr("class", "nodes") 
-
-  forceLayout = d3.layout.force()
-                         .gravity(0.4)
-                         .linkDistance(20)
-                         .charge(-150)
-                         .size([presentationSVGWidth, presentationSVGHeight])
-                         .on("tick", tick)
-
-  drag = forceLayout.drag()
-
-    .on('dragstart', function (d) { 
-      dragStartMouseCoords = d3.mouse(presentationSVG.node())
-
-      //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
-    })
-
-    .on('dragend', function (node) { 
-      // determine d3 drag-end v.s. a click, by mouse movement
-      // (this is the price of using the d3 drag event, 
-      //  see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
-
-      if (interactionState.longStablePressEnd) return
-
-      dragEndMouseCoords = d3.mouse(presentationSVG.node())
-
-      if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 && 
-          Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) == 0) {
-          // consider it a "click"
-
-          // is the ctrl key down during the click?
-
-          console.log(interactionState.ctrlDown)
-          if (interactionState.ctrlDown) toggleNodeSelect(node)
-          else toggleNodeExpansion(node)
-      }
-      else {
-        // consider it a drag end
-        node.fixed = true // fix the node
-      }
-    })
-}
-
 function toggleNodeExpansion(node) {
   console.log("status on click: " + node.expandStatus)
   if      (node.expandStatus === 'collapsed') expandNode(node)
@@ -1109,6 +1060,7 @@ function toggleNodeSelect(node) {
 function expandNode(node) {
 
   console.log("expanding node")
+  console.log(node)
 
   node.expandStatus = 'expanded'
 
@@ -1154,7 +1106,7 @@ function expandNode(node) {
   if (node.definition == 'external') 
     console.log(node.displayName + ' is defined externally to the project being visualized')
 
-  d3Render(displayGraph)
+  rewarmForceLayout()
 
 }
 
@@ -1181,8 +1133,7 @@ function collapseNode(node) {
   //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
                  //.attr("class", "tooltip")
 
-
-  d3Render(displayGraph)
+  rewarmForceLayout()
 
 }
 
@@ -1343,7 +1294,56 @@ function showSourceCode(node) {
 }
 
 
-function d3Render(displayGraph) {
+function initForceLayout() {
+
+  // svg hooks for the content (separate hooks allow controlling for render "z-order")
+  presentationSVG.append("g").attr("class", "links") 
+  presentationSVG.append("g").attr("class", "extensionArcs") 
+  presentationSVG.append("g").attr("class", "nodes") 
+
+  forceLayout = d3.layout.force()
+                         .gravity(0.4)
+                         .linkDistance(20)
+                         .charge(-150)
+                         .on("tick", tick)
+
+  drag = forceLayout.drag()
+  .on('dragstart', function (d) { 
+    dragStartMouseCoords = d3.mouse(presentationSVG.node())
+
+    //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
+  })
+
+  .on('dragend', function (node) { 
+    // determine d3 drag-end v.s. a click, by mouse movement
+    // (this is the price of using the d3 drag event, 
+    //  see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
+
+    if (interactionState.longStablePressEnd) return
+
+    dragEndMouseCoords = d3.mouse(presentationSVG.node())
+
+    if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 && 
+        Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) == 0) {
+        // consider it a "click"
+
+        // is the ctrl key down during the click?
+
+        console.log(interactionState.ctrlDown)
+        if (interactionState.ctrlDown) toggleNodeSelect(node)
+        else toggleNodeExpansion(node)
+    }
+    else {
+      // consider it a drag end
+      node.fixed = true // fix the node
+    }
+  })
+}
+
+// update the display with the display graph, 
+// by (re)joining the data with the display, the d3 way.
+// for a deliberation, see http://bost.ocks.org/mike/join/
+function updateForceLayout(displayGraph) {
 
   d3Data = mapToD3(displayGraph)
 
@@ -1493,26 +1493,21 @@ function d3Render(displayGraph) {
   d3ExtensionArcs.exit().transition('showOrRemove')
                        .duration(0).style('fill-opacity', 0).style('stroke-opacity', 0).remove()
 
-  function superShape(node) {
-    // consider using https://github.com/popkinj/polymorph instead.
-    var supershape = d3.superformula()
-                       .type("rectangle")
-                       .size(1000)
-                       .segments(3600);
-
-    var selector = '#node' + node.id
-  }
-
-  //console.log(d3Data.nodes.length)
-  //console.log(d3Data.nodes.length)
-  //console.log(d3Data.links.length)
+  // bind the force layout to the d3 bindings (re)made above,
+  // and animate it.
   forceLayout.nodes(d3Data.nodes)
              .links(d3Data.links)
-             .start()
 
   forceLayout.on("end", function() {
     console.log('layout stable')
   })
+
+  // fire away the animation of the force layout
+  forceLayout.start() 
+}
+
+function rewarmForceLayout() {
+  forceLayout.resume()
 }
 
 function getMembers(graph, nodeId) {
