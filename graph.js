@@ -483,6 +483,12 @@ function onDataLoaded(callback) {
   fireGraphDisplay(unusedTypes[0])
 }
 
+// return the node at the other end of a given node's edge - the node's "peer node" on the edge
+function getPeerNode(graph, nodeId, edge) {
+  if (nodeId == graph.edge(edge).v) return edge.w
+  else return edge.v
+}
+
 // recursive removal of nodes owned by a given node, 
 // along with the ownership edges connecting them
 function removeOwned(nodeId, graph) {
@@ -591,6 +597,11 @@ function applyGraphFilters() {
                  parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
   }
 
+  // this function's functionality is in process of being 
+  // superseded by directly using symbol properties arriving
+  // from the compiler. If anything surviving that transition
+  // still makes sense collapsing out of the graph, 
+  // that collapsing can be reinstated. 
   function variousFilters() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
@@ -623,8 +634,22 @@ function applyGraphFilters() {
     })
   }
 
+  function filterUnusedSynthetics() {
+    globalGraph.nodes().forEach(function(nodeId) {
+      var node = globalGraph.node(nodeId)
+      // The compiler creates default anonymous methods for copying the arguments passed
+      // to a case class. They do not convey any useful information, hence filtered.
+      if (node.notSynthetic == "false") {
+        logInputGraphPreprocessing('removing compiler-synthetic entity ' + node.name + ' (' + nodeId +') and its edges')
+        console.log(node)
+        removeWithEdges(globalGraph, nodeId)
+      }
+    })
+  }
+
+  filterUnusedSynthetics()
   filterExternalPackageChains()
-  variousFilters()
+  //variousFilters()
   collapseValRepresentationPairs()
 }
   
@@ -978,23 +1003,27 @@ function initAwesomplete() {
 function SetOrUpdateD3Data(displayGraph) {
   //
   // transform the input graph to a d3 input graph,
-  // such that d3 indexing is contiguous. Is that really a d3 required?
+  // such that d3 indexing is contiguous.
   //
   //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
   //   https://github.com/mbostock/d3/wiki/Force-Layout#links
   //
   nodeIdIndex = {}
-  var nodesJson = displayGraph.nodes().map(function(id, index) {
-      nodeIdIndex[id] = index
 
-      d3Node = displayGraph.node(id)
-      d3Node['id'] = id // add back the id
-      //console.log(d3Node[id.toString()])
-      // set the initial location via px, py
-      d3Node['px'] = displayGraph.node(id).x
-      d3Node['py'] = displayGraph.node(id).y
-      return d3Node
-    })
+  console.log("mapping from graphlib to d3")
+
+  var nodesJson = displayGraph.nodes().map(function(id, index) {
+    console.log(id)
+    nodeIdIndex[id] = index
+
+    d3Node = displayGraph.node(id)
+    d3Node['id'] = id // add back the id
+    //console.log(d3Node[id.toString()])
+    // set the initial location via px, py
+    d3Node['px'] = displayGraph.node(id).x
+    d3Node['py'] = displayGraph.node(id).y
+    return d3Node
+  })
 
   var linksJson = displayGraph.edges().map(function(edge) {
     return { source: nodeIdIndex[edge.v], // d3 required index of node
@@ -1373,7 +1402,7 @@ function d3Render(displayGraph) {
 
   d3DisplayNodes
     .enter().append("g").attr("class", "node")
-    .attr("id", function(node) { // for allowing indexed access
+    .attr("id", function(node) { // for allowing access by index to any node created by d3
       return 'node' + node.id
     })
     .call(drag)
@@ -1561,3 +1590,63 @@ function getUnusedTypes(graph) {
   })
 
 }
+
+/*
+ * returns the approximate memory associated by a given object, in bytes -
+ *
+ * this works for graphlib graph objects as well, however it can hold up 
+ * an i7 cpu at 100% utilization for few seconds, for a medium sized globalGraph
+ *
+ * Created by Stephen Morley - http://code.stephenmorley.org/ - and released under
+ * the terms of the CC0 1.0 Universal legal code: 
+ * http://creativecommons.org/publicdomain/zero/1.0/legalcode
+ */
+function sizeOf(object){
+
+  // initialise the list of objects and size
+  var objects = [object];
+  var size    = 0;
+
+  // loop over the objects
+  for (var index = 0; index < objects.length; index ++){
+
+    // determine the type of the object
+    switch (typeof objects[index]){
+
+      // the object is a boolean
+      case 'boolean': size += 4; break;
+
+      // the object is a number
+      case 'number': size += 8; break;
+
+      // the object is a string
+      case 'string': size += 2 * objects[index].length; break;
+
+      // the object is a generic object
+      case 'object':
+
+        // if the object is not an array, add the sizes of the keys
+        if (Object.prototype.toString.call(objects[index]) != '[object Array]'){
+          for (var key in objects[index]) size += 2 * key.length;
+        }
+
+        // loop over the keys
+        for (var key in objects[index]){
+
+          // determine whether the value has already been processed
+          var processed = false;
+          for (var search = 0; search < objects.length; search ++){
+            if (objects[search] === objects[index][key]){
+              processed = true;
+              break;
+            }
+          }
+          // queue the value to be processed if appropriate
+          if (!processed) objects.push(objects[index][key]);
+        }
+    }
+  }
+  // return the calculated size
+  return size;
+}
+
