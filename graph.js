@@ -1000,45 +1000,46 @@ function initAwesomplete() {
   //getFirstResultEnv('signature')
 }
 
-function SetOrUpdateD3Data(displayGraph) {
+function mapToD3(displayGraph) {
   //
-  // transform the input graph to a d3 input graph,
-  // such that d3 indexing is contiguous.
+  // map from graphlib graph represnetation to d3 graph representation:
+  //
+  // for d3, links must be specified as pairs of d3 nodes array *indices*
+  // via `source` and `target` attributes, as per:
   //
   //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
   //   https://github.com/mbostock/d3/wiki/Force-Layout#links
   //
+  // other than that we pass on properties appended to the graphlib representation,
+  // currently only the initial dagre computed initial location 
+  //
   nodeIdIndex = {}
 
-  console.log("mapping from graphlib to d3")
-
-  var nodesJson = displayGraph.nodes().map(function(id, index) {
+  var nodes = displayGraph.nodes().map(function(id, index) {
     console.log(id)
     nodeIdIndex[id] = index
 
     d3Node = displayGraph.node(id)
-    d3Node['id'] = id // add back the id
-    //console.log(d3Node[id.toString()])
+    d3Node.id = id // pass on the graphlib node id
+
     // set the initial location via px, py
-    d3Node['px'] = displayGraph.node(id).x
-    d3Node['py'] = displayGraph.node(id).y
+    d3Node.px = displayGraph.node(id).x
+    d3Node.py = displayGraph.node(id).y
     return d3Node
   })
 
-  var linksJson = displayGraph.edges().map(function(edge) {
-    return { source: nodeIdIndex[edge.v], // d3 required index of node
-             target: nodeIdIndex[edge.w], // d3 required index of node
-             v: edge.v,                   // original node number
-             w: edge.w,                   // original node number
+  var links = displayGraph.edges().map(function(edge) {
+    return { source: nodeIdIndex[edge.v], // vertex specified as index into nodes array
+             target: nodeIdIndex[edge.w], // vertex specified as index into nodes array
+             v: edge.v,                   // pass on the graphlib node id
+             w: edge.w,                   // pass on the graphlib node id
              edgeKind: displayGraph.edge(edge).edgeKind }
   })
 
-  //console.log(displayGraph.edges())
-  //console.log(linksJson)
-  return { nodesJson, linksJson }
+  return { nodes, links }
 }
 
-var d3DataBind = { nodesJson:[], linksJson:[] }
+var d3Data = { nodes:[], links:[] }
 
 function d3ForceLayoutInit() {
 
@@ -1220,7 +1221,7 @@ function avoidOverlaps() {
     }
   }
 
-  var nodes = d3DataBind.nodesJson
+  var nodes = d3Data.nodes
   var q = d3.geom.quadtree(nodes),
       i = 0,
       n = nodes.length;
@@ -1344,12 +1345,11 @@ function showSourceCode(node) {
 
 function d3Render(displayGraph) {
 
-  d3DataBind = SetOrUpdateD3Data(displayGraph)
-  //console.log('d3 data nodes ' + d3DataBind.nodesJson.length)
+  d3Data = mapToD3(displayGraph)
 
-  d3DisplayLinks = 
-    presentationSVG.select(".links").selectAll(".link")
-      .data(d3DataBind.linksJson, function(edge) { return edge.v + edge.w })
+  d3DisplayLinks = presentationSVG
+                   .select(".links").selectAll(".link")
+                   .data(d3Data.links, function(edge) { return edge.v + edge.w })
 
   d3DisplayLinks
       .enter().append("polyline")
@@ -1378,14 +1378,15 @@ function d3Render(displayGraph) {
       })
 
 
-  var extendEdges = d3DataBind.linksJson.filter(function(edge) { 
+  var extendEdges = d3Data.links.filter(function(edge) { 
     if (edge.edgeKind == 'extends')    return true
     if (edge.edgeKind == 'is of type') return true
     return false
   })
       
-  d3ExtensionArcs = presentationSVG.select(".extensionArcs").selectAll(".extensionArc")
-    .data(extendEdges, function(edge) { return edge.v + edge.w })
+  d3ExtensionArcs = presentationSVG
+                    .select(".extensionArcs").selectAll(".extensionArc")
+                    .data(extendEdges, function(edge) { return edge.v + edge.w })
 
   d3ExtensionArcs
     .enter().append("path")
@@ -1396,9 +1397,9 @@ function d3Render(displayGraph) {
     })
 
 
-  d3DisplayNodes = 
-    presentationSVG.select(".nodes").selectAll(".node")
-      .data(d3DataBind.nodesJson, function(node) { return node.id })
+  d3DisplayNodes = presentationSVG
+                  .select(".nodes").selectAll(".node")
+                  .data(d3Data.nodes, function(node) { return node.id })
 
   d3DisplayNodes
     .enter().append("g").attr("class", "node")
@@ -1502,11 +1503,11 @@ function d3Render(displayGraph) {
     var selector = '#node' + node.id
   }
 
-  //console.log(d3DataBind.nodesJson.length)
-  //console.log(d3DataBind.nodesJson.length)
-  //console.log(d3DataBind.linksJson.length)
-  forceLayout.nodes(d3DataBind.nodesJson)
-             .links(d3DataBind.linksJson)
+  //console.log(d3Data.nodes.length)
+  //console.log(d3Data.nodes.length)
+  //console.log(d3Data.links.length)
+  forceLayout.nodes(d3Data.nodes)
+             .links(d3Data.links)
              .start()
 
   forceLayout.on("end", function() {
