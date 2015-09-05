@@ -633,6 +633,7 @@ function applyGraphFilters() {
 
   function filterUnusedSynthetics() {
     globalGraph.nodes().forEach(function(nodeId) {
+      console.log(nodeId)
       var node = globalGraph.node(nodeId)
       // The compiler creates default anonymous methods for copying the arguments passed
       // to a case class. They do not convey any useful information, hence filtered.
