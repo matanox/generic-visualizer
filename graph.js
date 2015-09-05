@@ -651,7 +651,6 @@ function applyGraphFilters() {
 
   function filterUnusedSynthetics() {
     globalGraph.nodes().forEach(function(nodeId) {
-      console.log(nodeId)
       var node = globalGraph.node(nodeId)
       if (node.notSynthetic == "false") 
         if (!hasNonSyntheticUsers(globalGraph, nodeId)) {
@@ -1692,3 +1691,4 @@ function sizeOf(object){
   // return the calculated size
   return size;
 }
+
