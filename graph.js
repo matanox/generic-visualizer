@@ -552,7 +552,6 @@ function filterByChain(chain, graph) {
 }
 
 function removeWithEdges(graph, nodeId) {
-  //console.log(nodeId)
   graph.nodeEdges(nodeId).forEach(function(edge) { graph.removeEdge(edge)})
   graph.removeNode(nodeId)
 }
@@ -631,23 +630,41 @@ function applyGraphFilters() {
     })
   }
 
+  function hasNonSyntheticUsers(graph, nodeId) {
+    for (edge of graph.nodeEdges(nodeId)) {
+      if (edge.w == nodeId) {
+        edgeKind = graph.edge(edge).edgeKind
+        if (edgeKind == 'extends'    ||
+            edgeKind == 'is of type' ||
+            edgeKind == 'uses') {
+
+          // arriving here, the edge peer uses our node being inspected
+          if (graph.node(edge.v).notSynthetic == true) 
+            return true
+          else
+            return hasNonSyntheticUsers(graph, edge.v)        
+        }
+      }
+    }
+    return false
+  }
+
   function filterUnusedSynthetics() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
-      // The compiler creates default anonymous methods for copying the arguments passed
-      // to a case class. They do not convey any useful information, hence filtered.
-      if (node.notSynthetic == "false") {
-        logInputGraphPreprocessing('removing compiler-synthetic entity ' + node.name + ' (' + nodeId +') and its edges')
-        console.log(node)
-        removeWithEdges(globalGraph, nodeId)
-      }
+      if (node.notSynthetic == "false") 
+        if (!hasNonSyntheticUsers(globalGraph, nodeId)) {
+          logInputGraphPreprocessing('removing compiler-synthetic entity not being used: ' + node.displayName + ' (' + nodeId +'), and its edges')
+          console.log(node)
+          removeWithEdges(globalGraph, nodeId)
+        }
     })
   }
 
-  filterUnusedSynthetics()
   filterExternalPackageChains()
   //variousFilters()
   collapseValRepresentationPairs()
+  filterUnusedSynthetics()
 }
   
 // Collapses all val pairs that represent a single val each.
@@ -837,7 +854,6 @@ function addAndRenderNeighbors(graph, id, degree) {
 
 // add node neighbors to display graph
 function addNodeNeighbors(graph, id, degree) {
-  //console.log(id)
   if (degree == 0) return   
   globalGraph.nodeEdges(id).forEach(function(edge) {
     //console.log(edge)
@@ -1021,7 +1037,7 @@ function mapToD3(displayGraph) {
     nodeIdIndex[id] = index
 
     d3Node = displayGraph.node(id)
-    d3Node.id = id // pass on the graphlib node id
+    //d3Node.id = id // pass on the graphlib node id
 
     // set the initial location via px, py
     d3Node.px = displayGraph.node(id).x
@@ -1537,6 +1553,9 @@ function rewarmForceLayout() {
   forceLayout.resume()
 }
 
+
+
+
 function getMembers(graph, nodeId) {
   return graph.nodeEdges(nodeId).filter(function(edge) {
     return edge.v == nodeId &&
@@ -1672,4 +1691,3 @@ function sizeOf(object){
   // return the calculated size
   return size;
 }
-
