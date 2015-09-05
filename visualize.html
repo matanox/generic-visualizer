@@ -1,10 +1,21 @@
 <html>
   <head>
+    <!-- SystemJS -->
+    <script src="jspm_packages/system.js"></script>
+    <script src="config.js"></script>
+    <script>
+     System.import('d3.min.js')
+     System.import('fisheye.js')
+     System.import('awesomplete.js')
+     System.import('graph.js')
+    </script>
+
+    <!-- other/legacy -->
     <script src="dagre.min.js"></script>
-    <script src="d3.min.js"></script>
-    <script src="fisheye.js"></script>    
-    <script src="superformula.js"></script>
-    <script src="awesomplete.js" async></script>
+    <!--script src="d3.min.js"></script-->
+    <!--script src="fisheye.js"></script-->    
+    <!--script src="superformula.js"></script-->
+    <!--script src="awesomplete.js" async></script-->
     <link rel="stylesheet" href="awesomplete.css" />
   </head>
   <style>
@@ -33,7 +44,7 @@
       <input id="inputBar" />
     </div>
 
-    <script src="graph.js"></script>
+    <!--script src="graph.js"></script-->
 
     <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 
