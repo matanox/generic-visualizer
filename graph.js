@@ -551,7 +551,7 @@ function filterByChain(chain, graph) {
     trim(nodeId)
 }
 
-function removeWithEdges(graph, nodeId) {
+function removeWithAllEdges(graph, nodeId) {
   graph.nodeEdges(nodeId).forEach(function(edge) { graph.removeEdge(edge)})
   graph.removeNode(nodeId)
 }
@@ -606,26 +606,26 @@ function applyGraphFilters() {
       // to a case class. They do not convey any useful information, hence filtered.
       if (node.kind == 'method' && node.name.indexOf('copy$default') == 0) {
         logInputGraphPreprocessing('removing case class default copier ' + node.name + ' (and its edge)')
-        removeWithEdges(globalGraph, nodeId)
+        removeWithAllEdges(globalGraph, nodeId)
       }
 
       // similar to the above, it appears these just apply the default copy methods
       if (node.kind == 'method' && node.name.indexOf('apply$default') == 0) {
         logInputGraphPreprocessing('removing default applier ' + node.name + ' (and its edge)')
-        removeWithEdges(globalGraph, nodeId)
+        removeWithAllEdges(globalGraph, nodeId)
       }
 
       // redundant method definition created for some traits
       if (node.kind == 'method' && node.name === '$init$') {
         logInputGraphPreprocessing('removing redundant trait init method ' + node.name + ' (and its edge)')
-        removeWithEdges(globalGraph, nodeId)
+        removeWithAllEdges(globalGraph, nodeId)
       }
 
       // 
       if (node.kind == 'value' && node.name.indexOf('x$') == 0)  // unnamed value
         if (directUsers(globalGraph, nodeId).length == 0) {      // that is not used
           logInputGraphPreprocessing('removing unnamed and unused value ' + node.name + ' (and its edges)')
-          removeWithEdges(globalGraph, nodeId)
+          removeWithAllEdges(globalGraph, nodeId)
       }
     })
   }
@@ -656,7 +656,7 @@ function applyGraphFilters() {
         if (!hasNonSyntheticUsers(globalGraph, nodeId)) {
           logInputGraphPreprocessing('removing compiler-synthetic entity not being used: ' + node.displayName + ' (' + nodeId +'), and its edges')
           console.log(node)
-          removeWithEdges(globalGraph, nodeId)
+          removeWithAllEdges(globalGraph, nodeId)
         }
     })
   }
@@ -696,7 +696,7 @@ function collapseValRepresentationPairs() {
   getValRepresentationPairs().forEach(function(edge){
     logInputGraphPreprocessing('deduplicating value representation pair ' + 
                                 edge.v + ' -> ' + edge.w + ' by removing ' + edge.w + ' alltogether')
-    removeWithEdges(globalGraph, edge.w)
+    removeWithAllEdges(globalGraph, edge.w)
   })
 }
 
@@ -832,8 +832,35 @@ function toggleHighlightState(nodeId, targetState) {
   }
 }
 
+// return node on the other side of its supplied edge
+function edgePeer(nodeId, edge) {
+  if (nodeId != edge.v && nodeId != edge.w) throw "invalid call to edgePeer"
+  return nodeId == edge.v ? edge.w : edge.v
+}
+
+// removes a given node from the display graph,
+// along any of its connected nodes that aren't
+// connected to any other nodes - never used
+function removeNodeFromDisplayFancy(id) {
+  var nodePeers = displayGraph.nodeEdges(id).map(function(edge) { return edgePeer(id, edge) })
+  displayGraph.removeWithAllEdges(id) 
+  nodePeers.forEach(function(id) {
+    if (displayGraph.nodeEdges(id).filter(function(edge) { return edge.v != edge.w }) == 0)
+      displayGraph.remove(id)
+  })
+}
+
+// remove all unconnected nodes from the display
+function removeAllUnconnectedFromDisplay() {
+  displayGraph.nodes().forEach(function(id) {
+    if (displayGraph.nodeEdges(id).filter(function(edge) { return edge.v != edge.w }) == 0)
+      displayGraph.removeNode(id)
+  })
+  updateForceLayout(displayGraph)
+}
+
 function removeNodeFromDisplay(nodeId) {
-  removeWithEdges(displayGraph, nodeId)
+  removeWithAllEdges(displayGraph, nodeId)
 }
 
 function addNodeToDisplay(id) {
@@ -844,27 +871,29 @@ function addNodeToDisplay(id) {
     node.selectStatus    = 'unselected'
     node.highlightStatus = 'unhighlighted'
     displayGraph.setNode(id, node)  
+
+    addNeighborLinksToDisplay(id)
   }
 }
 
-// add node neighbors and render them
-function addAndRenderNeighbors(graph, id, degree) {
-  addNodeNeighbors(displayGraph, node.id, 1)
+//
+// adds node's links to all other nodes already on the display.
+//
+function addNeighborLinksToDisplay(id) {
+  globalGraph.nodeEdges(id).forEach(function(edge) {
+    if (edge.v == id && displayGraph.hasNode(edge.w) ||
+        edge.w == id && displayGraph.hasNode(edge.v))     
+
+      displayGraph.setEdge(edge, globalGraph.edge(edge))
+    })
 }
 
 // add node neighbors to display graph
 function addNodeNeighbors(graph, id, degree) {
   if (degree == 0) return   
   globalGraph.nodeEdges(id).forEach(function(edge) {
-    //console.log(edge)
-    //testNodeOnwershipChain(edge.v)
-    //testNodeOnwershipChain(edge.w)
-
-    //if (!displayGraph.hasNode(edge.v))
     addNodeToDisplay(edge.v)
-    //if (!displayGraph.hasNode(edge.w))     
     addNodeToDisplay(edge.w)
-
     graph.setEdge(edge.v, edge.w, globalGraph.edge(edge.v, edge.w))
 
     if (edge.v != id) addNodeNeighbors(graph, edge.v, degree - 1)
@@ -873,19 +902,11 @@ function addNodeNeighbors(graph, id, degree) {
 }
 
 function addNodeEnv(id, degree) {
-
   // this is a naive implementation meant for very small values of degree.
   // for any humbly large degree, this needs to be re-implemented for efficient Big O(V,fembelish),
   // as the current one is very naive in that sense.
-
-  console.log(id)
-
-  //var graph = new dagre.graphlib.Graph({ multigraph: true}); 
-  
   addNodeToDisplay(id)
-
   addNodeNeighbors(displayGraph, id, degree)
-  //console.log(displayGraph)
   return displayGraph
 }
 
@@ -1558,20 +1579,14 @@ function rewarmForceLayout() {
 
 function getMembers(graph, nodeId) {
   return graph.nodeEdges(nodeId).filter(function(edge) {
-    return edge.v == nodeId &&
-           edge.edgeKind == 'declares member'
-  }).map(function(edge) {
-    return edge.w
-  })
+    return edge.v == nodeId && edge.edgeKind == 'declares member'
+  }).map(function(edge) { return edge.w })
 }
 
 function getUsers(graph, nodeId) {
   return graph.nodeEdges(nodeId).filter(function(edge) {
-    return edge.w == nodeId &&
-           graph.edge(edge).edgeKind == 'uses' 
-  }).map(function(edge) {
-    return edge.v
-  })
+    return edge.w == nodeId && graph.edge(edge).edgeKind == 'uses' 
+  }).map(function(edge) { return edge.v })
 }
 
 // list unused types (unextended, uninstantiated, or having no members being used).
@@ -1582,7 +1597,7 @@ function getUnusedTypes(graph) {
   // it doesn't try to avoid some repetition
 
   function isTypeNode(nodeId) {
-    return graph.node(nodeId).kind == 'class'  || 
+    return graph.node(nodeId).kind == 'class'  ||
            graph.node(nodeId).kind == 'object' ||
            graph.node(nodeId).kind == 'trait'
   }
@@ -1594,23 +1609,20 @@ function getUnusedTypes(graph) {
       if (edge.w == nodeId) {
         if (graph.edge(edge).edgeKind == 'extends')    users += 1
         if (graph.edge(edge).edgeKind == 'is of type') users += 1
-        if (graph.edge(edge).edgeKind == 'uses')       users += 1
       }
     }) 
 
     // is anyone using its subtypes if any?
     graph.nodeEdges(nodeId).forEach(function(edge) {
-      if (edge.v == nodeId) {
-        if (graph.edge(edge).edgeKind == 'declares member')
-          if (isTypeNode(edge.w))
-            users += getTypeUsers(edge.w).length
-      }
+      if (edge.v == nodeId && graph.edge(edge).edgeKind == 'declares member')
+        if (isTypeNode(edge.w))
+          users += getTypeUsers(edge.w).length    
     }) 
 
     // is it an object being used without "instantiation"?
     // in such case should check if any of its members are being used,
-    // because the compiler will not indicate any other form of usage 
-    // in this case
+    // because the compiler will not indicate the usage other
+    // than by the usage of the members, in such case.
     if (graph.node(nodeId).kind == 'object')
       getMembers(graph, nodeId).forEach(function(memberNode) {
         users += getUsers(graph, memberNode).length
@@ -1628,7 +1640,7 @@ function getUnusedTypes(graph) {
   })
 
   return projectTypeNodes.filter(function(nodeId) {
-    return getTypeUsers(nodeId) == 0
+    return getTypeUsers(nodeId).length == 0
   })
 
 }
