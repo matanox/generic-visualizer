@@ -4,10 +4,11 @@
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script>
     <script>
-     System.import('d3.min.js')
-     System.import('fisheye.js')
-     System.import('awesomplete.js')
-     System.import('graph.js')
+     System.import('d3.min.js').then(function(){  
+       System.import('fisheye.js')
+       System.import('awesomplete.js')
+       System.import('graph.js')
+     })
     </script>
 
     <!-- other/legacy -->

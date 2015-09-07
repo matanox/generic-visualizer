@@ -1,4 +1,4 @@
-console.log('javascript started')
+console.log('CANVE javascript started')
 
 var width
 var height
@@ -953,8 +953,6 @@ function fireGraphDisplay(nodeId) {
 
   // computeCirclePack(dispyChain(nodeId)) // we don't do anything with it right now
 
-  //d3Render(displayGraph)
-
   // do the following both whether the node was already on the display or not
 
   var node = displayGraph.node(nodeId)
@@ -1395,6 +1393,12 @@ function initForceLayout() {
  *
  */
 function updateForceLayout(displayGraph, removals) {
+
+  //if (displayGraph.nodes().length < 50) {
+  //  displayGraph.nodes().forEach(function(node){
+  //    expandNode(node)
+  //  })
+  //}
 
   //
   // sync the d3 graph data structure from the graphlib one
