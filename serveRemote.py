@@ -7,7 +7,7 @@ server_address = ("", 8000)
 
 class MyRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def translate_path(self, path):
-        if self.path.startswith('/cae-data'):
+        if self.path.startswith('/canve-data/root/'):
           return SimpleHTTPServer.SimpleHTTPRequestHandler.translate_path(self, path)
         else:
           return '../../visualizer/' + path

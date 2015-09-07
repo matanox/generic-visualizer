@@ -327,7 +327,7 @@ function adjustNames(node) {
 
 function loadNodes(callback){
   console.log('loading nodes')
-  d3.csv('canve-data/nodes', function(err, inputNodes) {
+  d3.csv('canve-data/root/nodes', function(err, inputNodes) {
     if (err) console.error(err)
     else {
       console.log('raw input nodes: '); console.dir (inputNodes)
@@ -373,7 +373,7 @@ function ownerShipNormalize(edge){
 
 function loadEdges(callback){
   console.log('loading edges')
-  d3.csv('canve-data/edges', function(err, inputEdges) {
+  d3.csv('canve-data/root/edges', function(err, inputEdges) {
     if (err) console.error(err)
     else {
       console.log('input edges: '); console.dir(inputEdges)
@@ -410,7 +410,7 @@ function getSources(callback) {
   var sources = 0
   projectNodes.forEach(function(nodeId) {
     asyncPending += 1
-    d3.text('canve-data/' + 'node-source-' + nodeId, function(err, nodeSource) {
+    d3.text('canve-data/root/' + 'node-source-' + nodeId, function(err, nodeSource) {
       if (err) console.error(err)
       else {
         sourceMap[nodeId] = nodeSource
@@ -1582,15 +1582,18 @@ function rewarmForceLayout() {
 
 
 function getMembers(graph, nodeId) {
-  return graph.nodeEdges(nodeId).filter(function(edge) {
-    return edge.v == nodeId && edge.edgeKind == 'declares member'
-  }).map(function(edge) { return edge.w })
+  return graph
+         .nodeEdges(nodeId)
+         .filter(function(edge) {
+           return edge.v == nodeId && graph.edge(edge).edgeKind == 'declares member' })
+         .map(function(edge) { return edge.w })
 }
 
 function getUsers(graph, nodeId) {
-  return graph.nodeEdges(nodeId).filter(function(edge) {
-    return edge.w == nodeId && graph.edge(edge).edgeKind == 'uses' 
-  }).map(function(edge) { return edge.v })
+  return graph
+         .nodeEdges(nodeId).filter(function(edge) {
+           return edge.w == nodeId && graph.edge(edge).edgeKind == 'uses' })
+         .map(function(edge) { return edge.v })
 }
 
 // list unused types (unextended, uninstantiated, or having no members being used).
@@ -1606,13 +1609,14 @@ function getUnusedTypes(graph) {
            graph.node(nodeId).kind == 'trait'
   }
 
-  function getTypeUsers(nodeId) {
+  function typeUsersCount(nodeId) {
     // is anyone using it?
     var users = 0
     graph.nodeEdges(nodeId).forEach(function(edge) {
       if (edge.w == nodeId) {
         if (graph.edge(edge).edgeKind == 'extends')    users += 1
         if (graph.edge(edge).edgeKind == 'is of type') users += 1
+        if (graph.edge(edge).edgeKind == 'uses')       users += 1
       }
     }) 
 
@@ -1620,17 +1624,23 @@ function getUnusedTypes(graph) {
     graph.nodeEdges(nodeId).forEach(function(edge) {
       if (edge.v == nodeId && graph.edge(edge).edgeKind == 'declares member')
         if (isTypeNode(edge.w))
-          users += getTypeUsers(edge.w).length    
+          users += typeUsersCount(edge.w)    
     }) 
 
     // is it an object being used without "instantiation"?
     // in such case should check if any of its members are being used,
     // because the compiler will not indicate the usage other
-    // than by the usage of the members, in such case.
-    if (graph.node(nodeId).kind == 'object')
+    // than by the usage of the members, in such case. Other than with
+    // an object, this additional check would be unnecessary as 
+    // a class must be instantiated to be used (AFAIK).
+    if (graph.node(nodeId).kind == 'object') {
+      console.log("object identified " + nodeId)  
+      console.log(getMembers(graph, nodeId))
       getMembers(graph, nodeId).forEach(function(memberNode) {
         users += getUsers(graph, memberNode).length
+        if (nodeId == 8215) console.log("CD users " + getUsers(graph, memberNode))
       })
+    }
 
     return users
   }
@@ -1644,7 +1654,7 @@ function getUnusedTypes(graph) {
   })
 
   return projectTypeNodes.filter(function(nodeId) {
-    return getTypeUsers(nodeId).length == 0
+    return typeUsersCount(nodeId) == 0
   })
 
 }
