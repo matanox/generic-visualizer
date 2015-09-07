@@ -327,7 +327,7 @@ function adjustNames(node) {
 
 function loadNodes(callback){
   console.log('loading nodes')
-  d3.csv('canve-data/root/nodes', function(err, inputNodes) {
+  d3.csv('canve-data/nodes', function(err, inputNodes) {
     if (err) console.error(err)
     else {
       console.log('raw input nodes: '); console.dir (inputNodes)
@@ -373,7 +373,7 @@ function ownerShipNormalize(edge){
 
 function loadEdges(callback){
   console.log('loading edges')
-  d3.csv('canve-data/root/edges', function(err, inputEdges) {
+  d3.csv('canve-data/edges', function(err, inputEdges) {
     if (err) console.error(err)
     else {
       console.log('input edges: '); console.dir(inputEdges)
@@ -410,7 +410,7 @@ function getSources(callback) {
   var sources = 0
   projectNodes.forEach(function(nodeId) {
     asyncPending += 1
-    d3.text('canve-data/root/' + 'node-source-' + nodeId, function(err, nodeSource) {
+    d3.text('canve-data/' + 'node-source-' + nodeId, function(err, nodeSource) {
       if (err) console.error(err)
       else {
         sourceMap[nodeId] = nodeSource
