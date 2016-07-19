@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-    implicit val format: StringSerializable[T] = asStringSerializable(implicitly[JsonFormat[T]])

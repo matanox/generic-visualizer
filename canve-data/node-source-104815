@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/s3/CreateCoreArtifacts.scala >
-
-      val c = implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]]

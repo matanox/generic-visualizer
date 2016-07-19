@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-case class Link(fromId: String, toId: String, name: String)

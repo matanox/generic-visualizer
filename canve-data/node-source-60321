@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
-
-      def fromJson[T: JsonFormat: ClassTag](artifact: FlatArtifact): Producer[T] =
-        fromArtifact(SingletonIo.json[T], artifact)

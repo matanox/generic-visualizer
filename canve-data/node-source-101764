@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-    def findLinks(s: PipelineStepInfo): Iterable[(PipelineStepInfo, PipelineStepInfo, String)] =
-      s.dependencies.map { case (name, dep) => (dep.stepInfo, s, name) } ++
-        s.dependencies.flatMap(t => findLinks(t._2.stepInfo))

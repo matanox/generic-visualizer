@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-  override def create = {
-    new ExternalProcess(commandTokens: _*).run(inputs.mapValues(_.get))
-  }

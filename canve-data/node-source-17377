@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
-
-  def write(s: String): Unit = {
-    write(asUTF8(s))
-  }

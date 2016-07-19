@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
-
-      def fromText[T: StringSerializable: ClassTag](artifact: FlatArtifact): Producer[Iterator[T]] =
-        fromArtifact(LineIteratorIo.text[T], artifact)

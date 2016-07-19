@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-    columnFormat2(Tuple2.apply[T1, T2], sep)

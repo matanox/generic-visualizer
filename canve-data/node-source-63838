@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-  def persistToUrl[T, A <: Artifact: ClassTag](
-    original: Producer[T],
-    io: Serializer[T, A] with Deserializer[T, A],
-    url: URI,
-    name: String = null

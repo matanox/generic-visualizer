@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ReadFromArtifact.scala >
-
-  override def stepInfo =
-    reader.stepInfo.copy(
-      outputLocation = Some(artifact.url)
-    )
-      .addParameters("src" -> artifact.url)

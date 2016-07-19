@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-    override def toString(arr: Array[T]): String = arr.map(colParser.toString).mkString(sep
-      .toString)

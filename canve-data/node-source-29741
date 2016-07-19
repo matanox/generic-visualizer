@@ -1,8 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
-
-      val urlHandlerChain =
-        if (fallbackUrlHandlers.isEmpty) {
-          urlHandler
-        } else {
-          UrlToArtifact.chain(urlHandler, fallbackUrlHandlers.head, fallbackUrlHandlers.tail: _*)
-        }

@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-  override def read(artifact: FlatArtifact): T = {
-    Resource.using(Source.fromInputStream(artifact.read)) { src =>
-      implicitly[StringSerializable[T]].fromString(src.mkString)
-    }
-  }

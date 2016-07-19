@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-  implicit def convertArtifactToInputData[A <: FlatArtifact](artifact: A): Producer[() => InputStream] = StaticResource(artifact)

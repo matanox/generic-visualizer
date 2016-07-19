@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-  def columnFormat2[P1, P2, T <: Product](
-    construct: (P1, P2) => T,
-    sep: Char = '\t'

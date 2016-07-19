@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-  implicit def tuple3ColumnFormat[T1: SS, T2: SS, T3: SS](
-    sep: Char = '\t'

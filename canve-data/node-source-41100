@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-  def json[T: JsonFormat: ClassTag](
-    implicit
-    codec: Codec

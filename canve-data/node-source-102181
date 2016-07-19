@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-      Seq(s) ++ s.stepInfo.dependencies.flatMap {
-        case (name, step) =>
-          findNodes(step)
-      }

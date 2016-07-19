@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
-
-  implicit def asFileArtifact(f: File) = new FileArtifact(f)

@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/MavenVersionId.scala >
-
-  def equalsIgnoreQualifier(other: MavenVersionId): Boolean =
-    major == other.major && minor == other.minor &&
-      incremental == other.incremental && build == other.build

@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-  def createOutputArtifact[A <: Artifact: ClassTag](path: String): A =
-    artifactFactory.createArtifact[A](rootOutputUrl, path)

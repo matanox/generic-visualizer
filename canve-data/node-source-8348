@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-class RunExternalProcess private (
-    commandTokens: Seq[CommandToken],
-    _versionHistory: Seq[String],
-    inputs: Map[String, Producer[() => InputStream]]

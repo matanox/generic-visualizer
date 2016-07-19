@@ -1,9 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-  implicit def convertToInputData[T, A <: FlatArtifact](p: PersistedProducer[T, A]): Producer[() => InputStream] = {
-    p.copy(create =
-      () => {
-        p.get
-        StreamIo.read(p.artifact.asInstanceOf[FlatArtifact])
-      })
-  }

@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
-
-  override def stepInfo =
-    Ai2CodeInfo(this, classVersion = ("" +: versionHistory).last)
-      .copy(description = descriptionOption)

@@ -3,7 +3,7 @@
 
 import BaseHTTPServer
 import SimpleHTTPServer
-server_address = ("", 8000)
+server_address = ("localhost", 2222)
 
 class MyRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def translate_path(self, path):

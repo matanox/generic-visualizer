@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
-
-    val params = for (field <- fieldNames) yield {
-      val f = obj.getClass.getDeclaredField(field)
-      f.setAccessible(true)
-      (field, f.get(obj))
-    }

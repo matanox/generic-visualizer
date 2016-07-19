@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-case class CommandOutputComponents(
-  stdout: Producer[() => InputStream],
-  stderr: Producer[() => InputStream],
-  outputs: Map[String, Producer[() => InputStream]]

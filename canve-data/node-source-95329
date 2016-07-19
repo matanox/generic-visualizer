@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-  def sinkNodes() = nodes.filter {
-    case (nodeId, node) =>
-      !links.exists(link => link.fromId == nodeId)
-  }

@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Workflow.scala >
-
-    val addEdges =
-      for (Link(from, to, name) <- links) yield {
-        s"""        g.setEdge("$from", "$to", {lineInterpolate: 'basis', label: "$name"}); """
-      }

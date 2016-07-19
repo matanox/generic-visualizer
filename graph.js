@@ -2,7 +2,7 @@ console.log('CANVE javascript started')
 
 var width
 var height
-var presentationSVGWidth 
+var presentationSVGWidth
 var presentationSVGHeight
 
 function windowSizeAdapter() {
@@ -12,19 +12,19 @@ function windowSizeAdapter() {
   console.log('viewport dimensions: ' + width + ' x ' + height)
 
   //
-  // Chrome may add an extra pixel beyond the screen dimension on either axis, upon zoom, 
+  // Chrome may add an extra pixel beyond the screen dimension on either axis, upon zoom,
   // which may directly require either one of the axis scroll bars, that in turn will
-  // by definition reduce the viewport, thus forcing the complementary scroll bar 
-  // becoming necessary as well, thus cascading into both scroll bars being 
+  // by definition reduce the viewport, thus forcing the complementary scroll bar
+  // becoming necessary as well, thus cascading into both scroll bars being
   // necessarily visible, wasting a lot of viewport space and attention for just one pixel.
   //
   // We bypass all that by using one pixel less than what the viewport size initially is -
   // in both axis dimensions.
   //
 
-  presentationSVGWidth = width -1   
-  presentationSVGHeight = height -1 
- 
+  presentationSVGWidth = width -1
+  presentationSVGHeight = height -1
+
   presentationSVG.attr('width', presentationSVGWidth)
                  .attr('height', presentationSVGHeight)
 
@@ -45,7 +45,7 @@ function searchDialogDisable() {
   document.getElementById('inputBar').value = ''
   interactionState.searchDialogEnabled = false
   awesompleteContainerDiv.style.visibility = 'hidden'
-}      
+}
 
 function searchDialogEnable() {
   interactionState.searchDialogEnabled = true
@@ -80,7 +80,7 @@ document.onkeypress = function(evt) {
   }
 
   if (evt.keyCode == 45) { // minus key
-    getSelectedNodes().forEach(function(nodeId) {      
+    getSelectedNodes().forEach(function(nodeId) {
       removeNodeFromDisplay(nodeId)
     })
     updateForceLayout(displayGraph, true)
@@ -114,18 +114,18 @@ var svgText   = hiddenSVG.append('svg:text')
                          .style('font-size', sphereFontSize)
 
 var presentationSVG = d3.select('body').append('svg:svg').style('position', 'aboslute').style('z-index', 0)
-  
-initForceLayout()   
+
+initForceLayout()
 windowSizeAdapter()
 
 function experimentalFishEyeIntegration() {
   // Note: this feels a little jerky, maybe tweening is required
-  // Note: does not play well with the force layout ticks, but 
-  //       should be easy to reconcile the two by merging 
-  //       this logic into the main rendering function, to 
+  // Note: does not play well with the force layout ticks, but
+  //       should be easy to reconcile the two by merging
+  //       this logic into the main rendering function, to
   //       rely on the fisheye values directly there.
-  presentationSVG.on("mousemove", function() { 
-    fisheye.focus(d3.mouse(this)) 
+  presentationSVG.on("mousemove", function() {
+    fisheye.focus(d3.mouse(this))
 
     d3DisplayNodes.each(function(d) { d.fisheye = fisheye(d); })
         .attr("cx", function(d) { return d.fisheye.x; })
@@ -153,25 +153,25 @@ function setSvgDefs() {
 
     var shortEdgeLength = length * ratio
 
-    var path = 'M0,0' + 
+    var path = 'M0,0' +
                'L0,' + shortEdgeLength +
                'L' + length + ',' + (shortEdgeLength/2) +
                'L0,0'
 
     svgDefSection.selectAll("marker")
-        .data(["arrow"])      
+        .data(["arrow"])
       .enter().append("svg:marker")
         .attr("id", "arrow")
-        .attr("refX", 0) 
+        .attr("refX", 0)
         .attr("refY", shortEdgeLength/2)
         .attr("markerWidth", length)
         .attr("markerHeight", shortEdgeLength)
-        .attr("markerUnits", "userSpaceOnUse") 
+        .attr("markerUnits", "userSpaceOnUse")
         //.attr("markerUnits", "strokeWidth")
         .attr("orient", "auto")
       .append("svg:path")
         .attr("d", path)
-        .style("fill", d3.rgb('green'))      
+        .style("fill", d3.rgb('green'))
   }; setUsesShapeDef(10, 0.5)
 
   function setMyRadialGradientDef() {
@@ -208,13 +208,13 @@ function setSvgDefs() {
     .append("svg:stop")
       .attr('offset', '50%')
       .attr('stop-color', 'white')
-    
+
     gradientDef
     .append("svg:stop")
       .attr('offset', '100%')
       .attr('stop-color', 'red')
 
-  }; setMyLinearGradientDef()    
+  }; setMyLinearGradientDef()
 
 }; setSvgDefs()
 
@@ -223,25 +223,25 @@ function setExtedsShape(length, ratio) {
 
   var shortEdgeLength = length * ratio
 
-  var path = 'M0,0' + 
+  var path = 'M0,0' +
              'L0,' + shortEdgeLength +
              'L' + length + ',' + (shortEdgeLength/2) +
              'L0,0'
 
   presentationSVG.append("svg:defs").selectAll("marker")
-      .data(["nonDash"])      
+      .data(["nonDash"])
     .enter().append("svg:marker")
       .attr("id", "nonDash")
-      .attr("refX", length) 
+      .attr("refX", length)
       .attr("refY", shortEdgeLength/2)
       .attr("markerWidth", length)
       .attr("markerHeight", shortEdgeLength)
-      .attr("markerUnits", "userSpaceOnUse") 
+      .attr("markerUnits", "userSpaceOnUse")
       //.attr("markerUnits", "strokeWidth")
       .attr("orient", "auto")
     .append("svg:path")
       .attr("d", path)
-      .style("fill", d3.rgb('green'))      
+      .style("fill", d3.rgb('green'))
 }; setExtedsShape(10, 0.5)
 */
 
@@ -252,6 +252,8 @@ function setExtedsShape(length, ratio) {
 var globalGraph = new dagre.graphlib.Graph({ multigraph: true});
 
 function formattedText(node) {
+
+  console.dir(node)
 
   function splitByLengthAndCamelOrWord(text) {
     function isUpperCase(char) {
@@ -272,8 +274,8 @@ function formattedText(node) {
 
   //var text = [node.kind]
   var text = []
-  
-  var splitName = splitByLengthAndCamelOrWord(node.displayName)
+
+  var splitName = splitByLengthAndCamelOrWord(node.component) // TODO: extract to name getter function decoupled from the CSV header names
 
   splitName.forEach(function(line) {
     text.push(line)
@@ -289,73 +291,39 @@ function calcBBox(node) {
                  .attr("text-anchor", "middle")
                  .attr('x', 0)
                  .attr('dy', '1.2em')
-                 .text(line)    
+                 .text(line)
   })
   return svgText.node().getBBox()
 }
 
-function adjustNames(node) {
-  if (node.kind == 'anonymous class' && node.name == '$anon') {
-    node.name = 'unnamed class'
-    node.displayName = node.name
-  }
-
-  if (node.kind == 'value' && node.name.indexOf('qual$') == 0) {
-    node.name = 'unnamed value'
-    node.displayName = node.name
-  }
-
-  if (node.kind == 'constructor' && node.name == '<init>') {
-    node.name = 'constructor'
-    node.displayName = node.name
-  }
-
-  if (node.kind == 'method' && node.name.indexOf('<init>$default$') == 0) {
-    node.name = 'default argument'
-    node.displayName = node.name
-  }
-
-  if (node.kind == 'value' && node.name.indexOf('x0$') == 0) { // a block argument
-    node.name = 'a block argument'
-    node.displayName = node.name
-  }
-
-  if (node.kind == 'lazy value') { // because showing laziness seems a little over of scope...
-    node.kind = 'value'
-  }
-}
-
 function loadNodes(callback){
   console.log('loading nodes')
-  d3.csv('canve-data/nodes', function(err, inputNodes) {
+  d3.csv('canve-data/nodes.csv', function(err, inputNodes) {
     if (err) console.error(err)
     else {
       console.log('raw input nodes: '); console.dir (inputNodes)
-      
+
       inputNodes.forEach(function(node) {
 
-        adjustNames(node)
-
-        if (node.displayName === undefined) 
-          node.displayName = node.kind + ' ' + node.name
+        console.log(node)
 
         bbox = calcBBox(node)
-        globalGraph.setNode(node.id, { name:         node.name, 
-                                       kind:         node.kind, 
-                                       displayName:  node.displayName,
-                                       notSynthetic: node.notSynthetic,
-                                       definition:   node.definition,
+        globalGraph.setNode(node.id, { name:         node.component,
+                                       kind:         node.properties,
+                                       displayName:  node.component,
+                                       notSynthetic: true,
+                                       definition:   node["explanation and high level detail"],
                                        textBbox:     bbox })
 
       })
 
       console.log('nodes: '); console.dir(globalGraph.nodes())
-      
-      console.log('loading sources, this may take a while...'); 
-      
+
+      //console.log('loading sources, this may take a while...');
+
       //console.log('skipping preemptive source loading')
       callback()
-      getSources(function(){})
+      //getSources(function(){})
     }
   })
 }
@@ -373,21 +341,19 @@ function ownerShipNormalize(edge){
 
 function loadEdges(callback){
   console.log('loading edges')
-  d3.csv('canve-data/edges', function(err, inputEdges) {
+  d3.csv('canve-data/edges.csv', function(err, inputEdges) {
     if (err) console.error(err)
     else {
       console.log('input edges: '); console.dir(inputEdges)
 
-      inputEdges.forEach(function(edge) {
-        ownerShipNormalize(edge)
-        globalGraph.setEdge(edge.id1, edge.id2, { edgeKind: edge.edgeKind });
-      })
-
       console.log('edges: '); console.dir(globalGraph.edges())
 
       inputEdges.forEach(function(edge) {
-        if (globalGraph.edge({v:edge.id1, w:edge.id2}) === undefined)
-          console.warn('input edge ' + edge  + ' failed to initialize as a graphlib edge')
+        console.log(edge.id1, edge.id2)
+        //console.dir(globalGraph.hasNode(edge.id1))
+        //console.dir(globalGraph.hasNode(edge.id2))
+        if (globalGraph.setEdge({v:edge.id1, w:edge.id2}) === undefined)
+          console.warn(`input edge (${edge.id1}, ${edge.id2}) failed to initialize as a graphlib edge`)
       })
 
       callback()
@@ -398,10 +364,10 @@ function loadEdges(callback){
 
 function getSources(callback) {
   sourceMap = {}
-  
-  // filter down the nodes that are defined in the project itself rather than 
+
+  // filter down the nodes that are defined in the project itself rather than
   // imported from outside, as only for these nodes, their source should be fetched
-  var projectNodes = globalGraph.nodes().filter(function(nodeId) { 
+  var projectNodes = globalGraph.nodes().filter(function(nodeId) {
     return (globalGraph.node(nodeId).definition === 'project')
   })
 
@@ -426,24 +392,28 @@ function getSources(callback) {
     if (asyncPending == 0) {
       clearInterval(interval)
 
-      if (sources == projectNodes.length) 
+      if (sources == projectNodes.length)
         console.log('done fetching all sources')
       else
         console.warn('failed fetching some sources')
 
-      callback()      
+      callback()
     }
   }, 300) // the interval length in ms
 }
 
 function initRadii() {
-  function radiusByEdges(nodeId) { 
-    return Math.log(globalGraph.nodeEdges(nodeId).length * 250) 
+  function radiusByEdges(nodeId) {
+    return Math.log(globalGraph.nodeEdges(nodeId).length * 250)
   }
 
   globalGraph.nodes().forEach(function(nodeId) {
-    globalGraph.node(nodeId).collapsedRadius = radiusByEdges(nodeId)
-    globalGraph.node(nodeId).radius = globalGraph.node(nodeId).collapsedRadius
+    //if (typeof globalGraph.node(nodeId) !== "undefined") {
+      console.log(nodeId)
+      console.dir(globalGraph.node(nodeId))
+      globalGraph.node(nodeId).collapsedRadius = radiusByEdges(nodeId)
+      globalGraph.node(nodeId).radius = globalGraph.node(nodeId).collapsedRadius
+    //}
   })
 }
 
@@ -451,16 +421,16 @@ function onDataLoaded(callback) {
 
   console.log('data loading done')
 
-  applyGraphFilters()
-  
-  debugListSpecialNodes() // show what special nodes still slip through the filters
+  //applyGraphFilters()
 
-  console.log('data filters applied')  
+  //debugListSpecialNodes() // show what special nodes still slip through the filters
+
+  //console.log('data filters applied')
 
   initRadii()
 
   displayGraph = new dagre.graphlib.Graph({ multigraph: true}); // directed graph, allowing multiple edges between two nodes
-  displayGraph.setGraph({}) 
+  displayGraph.setGraph({})
 
   window.onresize = function() {
     windowSizeAdapter()
@@ -468,16 +438,17 @@ function onDataLoaded(callback) {
   }
 
   initAwesomplete()
-  //fireGraphDisplay(87570)
-  //fireGraphDisplay(35478)
-  //fireGraphDisplay(8464)
-  //fireGraphDisplay(8250)
+  //fireGraphDisplayFromNode(87570)
+  //fireGraphDisplayFromNode(35478)
+  //fireGraphDisplayFromNode(8464)
+  //fireGraphDisplayFromNode(8250)
 
-  //getUnusedTypes(globalGraph).forEach(fireGraphDisplay)
+  //getUnusedTypes(globalGraph).forEach(fireGraphDisplayFromNode)
   unusedTypes = getUnusedTypes(globalGraph)
   console.log(unusedTypes.length + ' unused project types detected:')
   console.log(unusedTypes)
-  fireGraphDisplay(unusedTypes[0])
+  fireGraphDisplayFull
+  //fireGraphDisplayFromNode(unusedTypes[0])
 }
 
 // return the node at the other end of a given node's edge - the node's "peer node" on the edge
@@ -486,7 +457,7 @@ function getPeerNode(graph, nodeId, edge) {
   else return edge.v
 }
 
-// recursive removal of nodes owned by a given node, 
+// recursive removal of nodes owned by a given node,
 // along with the ownership edges connecting them
 function removeOwned(nodeId, graph) {
   for (edge of graph.nodeEdges(nodeId)) {
@@ -502,13 +473,13 @@ function removeOwned(nodeId, graph) {
 }
 
 packageExcludeList = [
-  { 
+  {
     description: 'scala core',
-    chain: ['scala'] 
+    chain: ['scala']
   },
-  { 
+  {
     description: 'java core',
-    chain: ['java', 'lang'] 
+    chain: ['java', 'lang']
   }
 ]
 
@@ -518,7 +489,7 @@ function filterByChain(chain, graph) {
     console.log('trimming ownership chain starting at: ' + chain.join('.') + ' (' + nodeId + ')')
     removeOwned(nodeId, graph)
   }
-  
+
   function findUniqueByName(nodeName) {
     var nodeIds = getNodesByName(nodeName, graph)
     if (nodeIds.length != 1) {
@@ -531,7 +502,7 @@ function filterByChain(chain, graph) {
 
   var nodeId = findUniqueByName('<root>')
   if (nodeId === undefined) return false
- 
+
   var match = true
   for (var chainPos = 0; chainPos < chain.length && match == true; chainPos++) {
     chainNodeName = chain[chainPos]
@@ -558,8 +529,8 @@ function removeWithAllEdges(graph, nodeId) {
 
 // return direct callers of a node
 function directUsers(graph, nodeId) {
-  var callers = graph.nodeEdges(nodeId).filter(function(edge) { 
-    return (edge.w == nodeId && 
+  var callers = graph.nodeEdges(nodeId).filter(function(edge) {
+    return (edge.w == nodeId &&
             graph.edge(edge).edgeKind === 'uses')
   })
   return callers
@@ -575,12 +546,12 @@ function logInputGraphPreprocessing(text) {
 //
 function applyGraphFilters() {
 
-  // filter away everything in certain external packages, other than their usage itself 
+  // filter away everything in certain external packages, other than their usage itself
   // made in the project's code
   function filterExternalPackageChains() {
     nodesBefore = globalGraph.nodes().length
     edgesBefore = globalGraph.edges().length
-    
+
     for (exclusion of packageExcludeList) {
       filterByChain(exclusion.chain, globalGraph)
     }
@@ -588,16 +559,16 @@ function applyGraphFilters() {
     nodesAfter = globalGraph.nodes().length
     edgesAfter = globalGraph.edges().length
 
-    console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') + 
-                ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' + 
+    console.log('filtered out nodes belonging to packages ' +  packageExcludeList.map(function(l){ return l.chain.join('.')}).join(', ') +
+                ', accounting for ' + parseInt((1-(nodesAfter/nodesBefore))*100) + '% of nodes and ' +
                  parseInt((1-(edgesAfter/edgesBefore))*100) + '% of links.')
   }
 
-  // this function's functionality is in process of being 
+  // this function's functionality is in process of being
   // superseded by directly using symbol properties arriving
   // from the compiler. If anything surviving that transition
-  // still makes sense collapsing out of the graph, 
-  // that collapsing can be reinstated. 
+  // still makes sense collapsing out of the graph,
+  // that collapsing can be reinstated.
   function variousFilters() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
@@ -621,7 +592,7 @@ function applyGraphFilters() {
         removeWithAllEdges(globalGraph, nodeId)
       }
 
-      // 
+      //
       if (node.kind == 'value' && node.name.indexOf('x$') == 0)  // unnamed value
         if (directUsers(globalGraph, nodeId).length == 0) {      // that is not used
           logInputGraphPreprocessing('removing unnamed and unused value ' + node.name + ' (and its edges)')
@@ -639,10 +610,10 @@ function applyGraphFilters() {
             edgeKind == 'uses') {
 
           // arriving here, the edge peer uses our node being inspected
-          if (graph.node(edge.v).notSynthetic == true) 
+          if (graph.node(edge.v).notSynthetic == true)
             return true
           else
-            return hasNonSyntheticUsers(graph, edge.v)        
+            return hasNonSyntheticUsers(graph, edge.v)
         }
       }
     }
@@ -652,7 +623,7 @@ function applyGraphFilters() {
   function filterUnusedSynthetics() {
     globalGraph.nodes().forEach(function(nodeId) {
       var node = globalGraph.node(nodeId)
-      if (node.notSynthetic == "false") 
+      if (node.notSynthetic == "false")
         if (!hasNonSyntheticUsers(globalGraph, nodeId)) {
           logInputGraphPreprocessing('removing compiler-synthetic entity not being used: ' + node.displayName + ' (' + nodeId +'), and its edges')
           console.log(node)
@@ -666,12 +637,12 @@ function applyGraphFilters() {
   collapseValRepresentationPairs()
   filterUnusedSynthetics()
 }
-  
+
 // Collapses all val pairs that represent a single val each.
 //
-// Rational: the compiler will generate two vals for each val found 
+// Rational: the compiler will generate two vals for each val found
 // in the code being compiled. Here we collapse them,
-// as the duplication seems not to add any 
+// as the duplication seems not to add any
 // informative value.
 //
 // Note that it is better to keep this as a separate function,
@@ -685,16 +656,16 @@ function collapseValRepresentationPairs() {
         if (globalGraph.node(edge.v).name == globalGraph.node(edge.w).name)
           if (globalGraph.node(edge.v).kind == 'value' && globalGraph.node(edge.w).kind == 'value')
             if (edge.w - edge.v == 1) // is this really a requirement?
-              if (globalGraph.edge(edge).edgeKind == 'uses') 
+              if (globalGraph.edge(edge).edgeKind == 'uses')
                 valRepresentationPairs.push(edge)
       })
 
     a = valRepresentationPairs
     return valRepresentationPairs
   }
-  
+
   getValRepresentationPairs().forEach(function(edge){
-    logInputGraphPreprocessing('deduplicating value representation pair ' + 
+    logInputGraphPreprocessing('deduplicating value representation pair ' +
                                 edge.v + ' -> ' + edge.w + ' by removing ' + edge.w + ' alltogether')
     removeWithAllEdges(globalGraph, edge.w)
   })
@@ -710,28 +681,28 @@ function passiveEdgeKindVoice(edgeKind) {
 function describe(graph, edge) {
   edgeKind = graph.edge(edge).edgeKind
 
-  return edgeKind + ' ' + 
+  return edgeKind + ' ' +
          graph.node(edge.w).displayName
 }
 
 function describeReversed(graph, edge) {
   edgeKind = graph.edge(edge).edgeKind
 
-  return passiveEdgeKindVoice(edgeKind) + ' ' + 
+  return passiveEdgeKindVoice(edgeKind) + ' ' +
          graph.node(edge.v).displayName
 }
 
 function logNodeNeighbors(graph, nodeId) {
-  
+
   console.log('')
   console.log(graph.node(nodeId).displayName + ':')
 
   graph.nodeEdges(nodeId).forEach(function(edge) {
     edgeKind = graph.edge(edge).edgeKind
-    
-    if (nodeId == edge.v) 
+
+    if (nodeId == edge.v)
       console.log(describe(graph,edge))
-    if (nodeId == edge.w) 
+    if (nodeId == edge.w)
       console.log(describeReversed(graph, edge))
   })
 
@@ -739,7 +710,7 @@ function logNodeNeighbors(graph, nodeId) {
 }
 
 function debugListSpecialNodes() {
-  
+
   globalGraph.edges().forEach(ownerShipNormalize)
 
   globalGraph.nodes().forEach(function(nodeId){
@@ -752,7 +723,7 @@ function fetchData(callback) {
   loadNodes(function(){loadEdges(onDataLoaded)})
 }
 
-fetchData() 
+fetchData()
 
 function getNodesByName(searchNodeName, graph) {
   var found = graph.nodes().filter(function(id) {
@@ -765,8 +736,8 @@ function getOnwershipChain(id) {
 
   var chain = []
   function getNodeOwnershipChain(id) {
-    // look for ownership edges    
-    globalGraph.nodeEdges(id).forEach(function(edge) { 
+    // look for ownership edges
+    globalGraph.nodeEdges(id).forEach(function(edge) {
       if (globalGraph.edge(edge).edgeKind == 'declares member') {
         if (edge.w == id) {
           var owner = edge.v
@@ -780,9 +751,9 @@ function getOnwershipChain(id) {
   getNodeOwnershipChain(id)
 }
 
-// recompute and adjust the node rim's style, 
+// recompute and adjust the node rim's style,
 // based on the intersection of two state properties.
-// (we currently leave the transition duration to the caller, as this 
+// (we currently leave the transition duration to the caller, as this
 // function currently doesn't deal with the source state only the target state).
 function adjustedNodeRimVisualization(node, transitionDuration) {
 
@@ -799,7 +770,7 @@ function adjustedNodeRimVisualization(node, transitionDuration) {
   if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'highlighted')
     { color = 'orange'; width = 2 }
 
-  if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'unhighlighted') 
+  if (node.selectStatus == 'unselected'  &&  node.highlightStatus == 'unhighlighted')
     { color = '#fff'; width = 1 }
 
   if (transitionDuration === undefined) transitionDuration = 0
@@ -843,7 +814,7 @@ function edgePeer(nodeId, edge) {
 // connected to any other nodes - never used
 function removeNodeFromDisplayFancy(id) {
   var nodePeers = displayGraph.nodeEdges(id).map(function(edge) { return edgePeer(id, edge) })
-  displayGraph.removeWithAllEdges(id) 
+  displayGraph.removeWithAllEdges(id)
   nodePeers.forEach(function(id) {
     if (displayGraph.nodeEdges(id).filter(function(edge) { return edge.v != edge.w }) == 0)
       displayGraph.remove(id)
@@ -864,13 +835,14 @@ function removeNodeFromDisplay(nodeId) {
 }
 
 function addNodeToDisplay(id) {
-  if (displayGraph.node(id) === undefined) {   
+  console.log(`id: ${id}`)
+  if (displayGraph.node(id) === undefined) {
     var node = globalGraph.node(id)
     node.id              = id
     node.expandStatus    = 'collapsed'
     node.selectStatus    = 'unselected'
     node.highlightStatus = 'unhighlighted'
-    displayGraph.setNode(id, node)  
+    displayGraph.setNode(id, node)
 
     addNeighborLinksToDisplay(id)
   }
@@ -882,7 +854,7 @@ function addNodeToDisplay(id) {
 function addNeighborLinksToDisplay(id) {
   globalGraph.nodeEdges(id).forEach(function(edge) {
     if (edge.v == id && displayGraph.hasNode(edge.w) ||
-        edge.w == id && displayGraph.hasNode(edge.v))     
+        edge.w == id && displayGraph.hasNode(edge.v))
 
       displayGraph.setEdge(edge, globalGraph.edge(edge))
     })
@@ -890,7 +862,7 @@ function addNeighborLinksToDisplay(id) {
 
 // add node neighbors to display graph
 function addNodeNeighbors(graph, id, degree) {
-  if (degree == 0) return   
+  if (degree == 0) return
   globalGraph.nodeEdges(id).forEach(function(edge) {
     addNodeToDisplay(edge.v)
     addNodeToDisplay(edge.w)
@@ -918,7 +890,7 @@ function makeHierarchyChain(nodeId) {
       //console.log(edge)
       children.push(makeHierarchyChain(edge.w))
     }
-  }) 
+  })
   if (children.length > 0) hierarchyNode['children'] = children
   return hierarchyNode
 }
@@ -937,14 +909,14 @@ function computeCirclePack(hierarchy) {
 }
 
 // compute circle graph
-function fireGraphDisplay(nodeId) {
+function fireGraphDisplayFromNode(nodeId) {
 
-  addNodeEnv(nodeId, 1) 
+  addNodeEnv(nodeId, 1)
 
-  // this creates a dagre initial layout that is unfortunately 
+  // this creates a dagre initial layout that is unfortunately
   // not bound to the window's viewport but may
   // be much much larger.
-  //dagre.layout(displayGraph) 
+  //dagre.layout(displayGraph)
   //console.log('dagre layout dimensions: ' + displayGraph.graph().width + ', ' + displayGraph.graph().height)
 
   console.log(displayGraph)
@@ -960,7 +932,7 @@ function fireGraphDisplay(nodeId) {
   var selector = '#node' + nodeId
   presentationSVG.select(selector).select(".circle")
     .transition('nodeHighlighting').duration(500).style('stroke', 'orange').style('stroke-width', 6)
-    .each('end', function() { 
+    .each('end', function() {
       adjustedNodeRimVisualization(node, 2000)
     })
 
@@ -970,12 +942,32 @@ function fireGraphDisplay(nodeId) {
 
 }
 
+// compute circle graph
+function fireGraphDisplayFull() {
+  
+  globalGraph.forEach(function(id) {
+    addNodeToDisplay(id)
+  })
+  
+  console.log(displayGraph)
+  console.log('nodes: ' + displayGraph.nodes().length + ', ' + 'edges: ' + displayGraph.edges().length)
+  console.log('layout computed')
+
+  // computeCirclePack(dispyChain(nodeId)) // we don't do anything with it right now
+
+  // do the following both whether the node was already on the display or not
+
+  updateForceLayout(displayGraph)
+
+}
+
+
 function initAwesomplete() {
   'use strict'
   //getFirstResultEnv("signature")
-  
+
   let nodes = globalGraph.nodes().map(function(id) {
-    let node = { id: id, 
+    let node = { id: id,
                  data: globalGraph.node(id) }
     //return node.name + ' ' + '(' + id + ')'
     return node
@@ -986,14 +978,14 @@ function initAwesomplete() {
     minChars: 1,
     maxItems: 100,
     list: nodes,
-    item: function (node, input) { 
+    item: function (node, input) {
             let suggestedElem = document.createElement('li')
             suggestedElem.appendChild(document.createTextNode(node.data.displayName + ' (' + node.id + ')'))
             return suggestedElem
           },
     filter: function (node, input) {
               return node.data.name.toLowerCase().indexOf(input.toLowerCase()) > -1 ||
-                     node.id === input 
+                     node.id === input
             },
     sort: function compare(a, b) {
             if (a.data.name < b.data.name) return -1
@@ -1005,8 +997,8 @@ function initAwesomplete() {
       var node = globalGraph.node(id)
 
       console.log('user selected ' + text)
-      
-      fireGraphDisplay(id)
+
+      fireGraphDisplayFromNode(id)
 
       searchDialogDisable()
     }
@@ -1026,7 +1018,7 @@ function initAwesomplete() {
   }; initAwesompleteDisplay()
 
   window.addEventListener("awesomplete-selectcomplete", function(e) {
-    // User made a selection from dropdown. 
+    // User made a selection from dropdown.
     // This is fired after the selection is applied
   }, false)
 
@@ -1040,11 +1032,11 @@ function mapToD3(displayGraph) {
   // for d3, links must be specified as pairs of d3 nodes array *indices*
   // via `source` and `target` attributes, as per:
   //
-  //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes 
+  //   https://github.com/mbostock/d3/wiki/Force-Layout#nodes
   //   https://github.com/mbostock/d3/wiki/Force-Layout#links
   //
   // other than that we pass on properties appended to the graphlib representation,
-  // currently only the initial dagre computed initial location 
+  // currently only the initial dagre computed initial location
   //
 
   console.log("mapping display graph to d3 data")
@@ -1101,13 +1093,13 @@ function expandNode(node) {
 
   // assign expanded radisu based on the bounding box needed for rendering the text,
   // plus some padding of the same size as the active font size
-  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + sphereFontSize 
+  var expandedRadius = Math.max(node.textBbox.width, node.textBbox.height)/2 + sphereFontSize
   node.radius = expandedRadius
 
   extendExpandedNodeEdges(node)
-  
+
   var selector = '#node' + node.id
-  presentationSVG.select(selector).each(function(group) { 
+  presentationSVG.select(selector).each(function(group) {
     var g = d3.select(this)
     g.select(".circle")
       .transition('nodeResizing').duration(200).attr("r", node.radius).attr('stroke-width', Math.max(3, Math.sqrt(node.radius)/2))
@@ -1121,7 +1113,7 @@ function expandNode(node) {
                         .attr('y', -(node.textBbox.height/4))
                         .style("cursor", "pointer")
                         .attr('pointer-events', 'none')
-        
+
         formattedText(node).forEach(function(line, i) {
           svgText.append('tspan')
                  .attr('x', 0)
@@ -1129,16 +1121,16 @@ function expandNode(node) {
                    if (i == 0) return 0
                    else return '1.2em'
                  })
-                 .text(line)    
+                 .text(line)
         })
     })
   })
 
   logNodeNeighbors(globalGraph, node.id)
 
-  if (node.definition == 'project') 
+  if (node.definition == 'project')
     showSourceCode(node)
-  if (node.definition == 'external') 
+  if (node.definition == 'external')
     console.log(node.displayName + ' is defined externally to the project being visualized')
 
   rewarmForceLayout()
@@ -1159,11 +1151,11 @@ function collapseNode(node) {
   node.radius = node.collapsedRadius
 
   var selector = '#node' + node.id
-  presentationSVG.select(selector).each(function(group) { 
+  presentationSVG.select(selector).each(function(group) {
     var g = d3.select(this)
     g.selectAll("text").remove()
     g.select(".circle")
-      .transition('nodeResizing').duration(400).attr("r", node.radius) 
+      .transition('nodeResizing').duration(400).attr("r", node.radius)
   })
   //.each("end", function(d) { d.append("text").text(d.kind + ' ' + d.name) })
                  //.attr("class", "tooltip")
@@ -1173,15 +1165,9 @@ function collapseNode(node) {
 }
 
 
-//
-// given that we already reset the edges's length such 
-// expanded nodes cannot overlap their conncections,
-// is this still necessary?
-//
 function avoidOverlaps() {
-
   function collide(node) {
-    
+
     //console.log('radius')
     //console.log(node.x)
     var r = node.radius + 16,
@@ -1219,7 +1205,7 @@ function tick(additionalConstraintFunc) {
 
   function keepWithinDisplayBounds() {
 
-    d3DisplayNodes.each(function(g) { 
+    d3DisplayNodes.each(function(g) {
       d3.select(this).select(".circle").each(function(d){
         radius = parseInt(d3.select(this).attr('r')) // the use of d3 selections is superfluous if radius is included in the base data node already
         if (d.x < radius) d.x = radius
@@ -1236,7 +1222,7 @@ function tick(additionalConstraintFunc) {
     // of the d3 managed svg elements to the current simulation values
     //
 
-    //console.log(d3DisplayNodes) 
+    //console.log(d3DisplayNodes)
 
     var count = 0
 
@@ -1253,14 +1239,14 @@ function tick(additionalConstraintFunc) {
     })
 
 /*
-    d3DisplayNodes.each(function(g) { 
+    d3DisplayNodes.each(function(g) {
                   d3.select(this).select(".circle")
                   .attr("cx", function(d) { count++; return d.x; })
                   .attr("cy", function(d) { return d.y; })
     })*/
 
-    d3DisplayNodes.attr("transform", function(d, i) {     
-        return "translate(" + d.x + "," + d.y + ")"; 
+    d3DisplayNodes.attr("transform", function(d, i) {
+        return "translate(" + d.x + "," + d.y + ")";
     })
 
     d3ExtensionArcs.attr("d", function(edge) {
@@ -1268,7 +1254,7 @@ function tick(additionalConstraintFunc) {
       //return ('M ' + parseInt(edge.source.x -40) + ' ' + parseInt(edge.source.y) + ' ' +
       //        'L ' + parseInt(edge.source.x + 40) + ' ' + parseInt(edge.source.y))
       var edgeRadius = edge.source.radius * 1.3
-      return ('M' + (edge.source.x - edgeRadius) + ',' + (edge.source.y) + 
+      return ('M' + (edge.source.x - edgeRadius) + ',' + (edge.source.y) +
               ' A1,1 0 0 1 ' +
               + (edge.source.x + edgeRadius) + ',' + (edge.source.y))
     })
@@ -1291,17 +1277,17 @@ function tick(additionalConstraintFunc) {
   keepWithinDisplayBounds()
 
   if (typeof additionalConstraintFunc === 'function') additionalConstraintFunc()
-  
+
   syncView()
   // forceLayout.stop() // show dagre layout without really letting the force layout
 }
 
-function nodeColor(node) { 
+function nodeColor(node) {
   if (node.kind == 'trait')           return d3.rgb('blue').darker(2)
   if (node.kind == 'class')           return d3.rgb('blue').brighter(1)
   if (node.kind == 'object')          return d3.rgb('blue').brighter(1.6)
   if (node.kind == 'anonymous class') return d3.rgb('gray').brighter(0.9)
-  if (node.kind == 'method')          
+  if (node.kind == 'method')
     if (node.name.indexOf('$') > 0)   return d3.rgb('gray').brighter(0.9)
     else                              return d3.rgb('green')
   if (node.kind == 'constructor')     return 'url(#MyRadialGradientDef)'
@@ -1321,7 +1307,7 @@ function extendExpandedNodeEdges(node) {
 }
 
 function showSourceCode(node) {
-    
+
     console.log('')
     console.log('Source Code for ' + node.displayName + ':')
     console.log(sourceMap[node.id])
@@ -1332,37 +1318,37 @@ function showSourceCode(node) {
 function initForceLayout() {
 
   // svg hooks for the content (separate hooks allow controlling for render "z-order")
-  presentationSVG.append("g").attr("class", "links") 
-  presentationSVG.append("g").attr("class", "extensionArcs") 
-  presentationSVG.append("g").attr("class", "nodes") 
+  presentationSVG.append("g").attr("class", "links")
+  presentationSVG.append("g").attr("class", "extensionArcs")
+  presentationSVG.append("g").attr("class", "nodes")
 
   // the force layout definition, including those behaviours of it,
   // that are kept constant throughout the program.
   forceLayout = d3.layout.force()
                          .gravity(0.4)
-                         .linkDistance(20)
+                         .linkDistance(50)
                          .charge(-150)
                          .on("tick", tick)
                          .on("end", function() { console.log('layout stable') })
 
   drag = forceLayout.drag()
-  
-  drag.on('dragstart', function (d) { 
+
+  drag.on('dragstart', function (d) {
     dragStartMouseCoords = d3.mouse(presentationSVG.node())
 
-    //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 && 
+    //Math.abs(mouseUpRelativeCoords[0] - mouseDownRelativeCoords[0]) < 10 &&
   })
 
-  drag.on('dragend', function (node) { 
+  drag.on('dragend', function (node) {
     // determine d3 drag-end v.s. a click, by mouse movement
-    // (this is the price of using the d3 drag event, 
+    // (this is the price of using the d3 drag event,
     //  see e.g. // see http://stackoverflow.com/questions/19931307/d3-differentiate-between-click-and-drag-for-an-element-which-has-a-drag-behavior)
 
     if (interactionState.longStablePressEnd) return
 
     dragEndMouseCoords = d3.mouse(presentationSVG.node())
 
-    if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 && 
+    if (Math.abs(dragStartMouseCoords[0] - dragEndMouseCoords[0]) == 0 &&
         Math.abs(dragStartMouseCoords[1] - dragEndMouseCoords[1]) == 0) {
         // consider it a "click"
 
@@ -1379,14 +1365,14 @@ function initForceLayout() {
   })
 }
 
-/* 
- * update the display with the display graph, 
+/*
+ * update the display with the display graph,
  * by (re)joining the data with the display, the d3 way.
  *
  * for a deliberation see:
  *   http://bost.ocks.org/mike/join/, and/or
  *   http://www.jeromecukier.net/blog/2015/05/19/you-may-not-need-d3/
- *                       
+ *
  * Note: yes, we do need to do all of this every time the data updates.
  *       given most of it are callback definitions, this isn't egregiously wasteful,
  *       and the little leeway for optimization is superfluous.
@@ -1403,7 +1389,7 @@ function updateForceLayout(displayGraph, removals) {
   //
   // sync the d3 graph data structure from the graphlib one
   //
-  d3Data = mapToD3(displayGraph) 
+  d3Data = mapToD3(displayGraph)
 
   //
   // the d3 (re)join
@@ -1423,7 +1409,7 @@ function updateForceLayout(displayGraph, removals) {
         return 'link' + edge.v + 'to' + edge.w
       })
       .style("stroke-width", 1)
-      .style("stroke", function(edge) { 
+      .style("stroke", function(edge) {
         if (edge.edgeKind == 'declares member') return d3.rgb('white').darker(2)
         if (edge.edgeKind == 'extends')         return d3.rgb('blue')
         if (edge.edgeKind == 'is of type')      return d3.rgb('blue')
@@ -1443,12 +1429,12 @@ function updateForceLayout(displayGraph, removals) {
       })
 
 
-  var extendEdges = d3Data.links.filter(function(edge) { 
+  var extendEdges = d3Data.links.filter(function(edge) {
     if (edge.edgeKind == 'extends')    return true
     if (edge.edgeKind == 'is of type') return true
     return false
   })
-      
+
   d3ExtensionArcs = presentationSVG
                     .select(".extensionArcs").selectAll(".extensionArc")
                     .data(extendEdges, function(edge) { return edge.v + edge.w })
@@ -1495,14 +1481,14 @@ function updateForceLayout(displayGraph, removals) {
 
       mouseUpCoords = d3.mouse(presentationSVG.node())
 
-      if (mouseUp.getTime() - mouseDown.getTime() > 500) 
-        if (Math.abs(mouseUpCoords[0] - mouseDownCoords[0]) < 10 && 
+      if (mouseUp.getTime() - mouseDown.getTime() > 500)
+        if (Math.abs(mouseUpCoords[0] - mouseDownCoords[0]) < 10 &&
             Math.abs(mouseUpCoords[1] - mouseDownCoords[1]) < 10) {
               interactionState.longStablePressEnd = true
               console.log('long stable click')
               node.fixed = false
         }
-              //superShape(node)          
+              //superShape(node)
     })
 
     .on('dblclick', function(node) {
@@ -1511,16 +1497,16 @@ function updateForceLayout(displayGraph, removals) {
       //node.fixed = true
 
       //console.log("node")
-      //console.log(node) 
+      //console.log(node)
 
       //console.log(displayGraph.nodes().length)
     })
 
     //
     // mouse over and mouse out events use a named transition (see https://gist.github.com/mbostock/24bdd02df2a72866b0ec)
-    // in order to both not collide with other events' transitions, such as the click transitions, 
+    // in order to both not collide with other events' transitions, such as the click transitions,
     // and to cancel each other per.
-    // 
+    //
 
     .on('mouseover', function(node) { // see better implementation at http://jsfiddle.net/cuckovic/FWKt5/
       for (edge of displayGraph.nodeEdges(node.id)) {
@@ -1544,7 +1530,7 @@ function updateForceLayout(displayGraph, removals) {
       }
     })
 
-  d3DisplayNodes.exit().on('mousedown', null) 
+  d3DisplayNodes.exit().on('mousedown', null)
                        .on('mouseup', null)
                        .on('dblclick', null)
                        .on('mouseover', null)
@@ -1559,7 +1545,7 @@ function updateForceLayout(displayGraph, removals) {
                        .duration(1000).style('stroke-opacity', 0).remove()
 
   //
-  // defer the resumption of the force simulation, when 
+  // defer the resumption of the force simulation, when
   // it visually-cognitively makes sense
   //
   var forceResumeDelay = removals ? 1500 : 0
@@ -1570,7 +1556,7 @@ function updateForceLayout(displayGraph, removals) {
                .links(d3Data.links)
 
     // after the (re)join, fire away the animation of the force layout
-    forceLayout.start() 
+    forceLayout.start()
   }, forceResumeDelay)
 }
 
@@ -1598,8 +1584,8 @@ function getUsers(graph, nodeId) {
 
 // list unused types (unextended, uninstantiated, or having no members being used).
 function getUnusedTypes(graph) {
-  
-  // this is a naive implementation that assumes 
+
+  // this is a naive implementation that assumes
   // there is not a lot of type nesting -
   // it doesn't try to avoid some repetition
 
@@ -1618,23 +1604,23 @@ function getUnusedTypes(graph) {
         if (graph.edge(edge).edgeKind == 'is of type') users += 1
         if (graph.edge(edge).edgeKind == 'uses')       users += 1
       }
-    }) 
+    })
 
     // is anyone using its subtypes if any?
     graph.nodeEdges(nodeId).forEach(function(edge) {
       if (edge.v == nodeId && graph.edge(edge).edgeKind == 'declares member')
         if (isTypeNode(edge.w))
-          users += typeUsersCount(edge.w)    
-    }) 
+          users += typeUsersCount(edge.w)
+    })
 
     // is it an object being used without "instantiation"?
     // in such case should check if any of its members are being used,
     // because the compiler will not indicate the usage other
     // than by the usage of the members, in such case. Other than with
-    // an object, this additional check would be unnecessary as 
+    // an object, this additional check would be unnecessary as
     // a class must be instantiated to be used (AFAIK).
     if (graph.node(nodeId).kind == 'object') {
-      console.log("object identified " + nodeId)  
+      console.log("object identified " + nodeId)
       console.log(getMembers(graph, nodeId))
       getMembers(graph, nodeId).forEach(function(memberNode) {
         users += getUsers(graph, memberNode).length
@@ -1662,11 +1648,11 @@ function getUnusedTypes(graph) {
 /*
  * returns the approximate memory associated by a given object, in bytes -
  *
- * this works for graphlib graph objects as well, however it can hold up 
+ * this works for graphlib graph objects as well, however it can hold up
  * an i7 cpu at 100% utilization for few seconds, for a medium sized globalGraph
  *
  * Created by Stephen Morley - http://code.stephenmorley.org/ - and released under
- * the terms of the CC0 1.0 Universal legal code: 
+ * the terms of the CC0 1.0 Universal legal code:
  * http://creativecommons.org/publicdomain/zero/1.0/legalcode
  */
 function sizeOf(object){
@@ -1717,4 +1703,3 @@ function sizeOf(object){
   // return the calculated size
   return size;
 }
-

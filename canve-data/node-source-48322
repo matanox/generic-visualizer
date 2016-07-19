@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ColumnFormats.scala >
-
-    p4Parser: StringSerializable[P4]): StringSerializable[T] = new StringSerializable[T] {

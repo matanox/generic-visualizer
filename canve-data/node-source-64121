@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Pipeline.scala >
-
-      def asJson[T: JsonFormat: ClassTag](
-        step: Producer[Iterable[T]],
-        stepName: String = null,
-        suffix: String = ".json"

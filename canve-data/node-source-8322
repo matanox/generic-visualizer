@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExecutionInfo.scala >
-
-case object NotRequested extends ExecutionInfo {
-  override def status = "Not requested"
-}

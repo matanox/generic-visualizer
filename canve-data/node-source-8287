@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-trait StringSerializable[T] {
-  def fromString(s: String): T
-  def toString(param: T): String
-}

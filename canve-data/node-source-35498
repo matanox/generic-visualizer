@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/PipelineStep.scala >
-
-  val signature = new Signature(
-    name = className,
-    unchangedSinceVersion = classVersion,
-    dependencies = dependencies,
-    parameters = parameters

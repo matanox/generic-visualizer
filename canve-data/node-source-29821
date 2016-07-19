@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
-
-        for (o <- others) {
-          fn = fn orElse o.urlToArtifact[A]
-        }

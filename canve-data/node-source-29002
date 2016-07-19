@@ -1,8 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
-
-  trait Reader {
-    /** Read a single entry by name. */
-    def read(entryName: String): InputStream
-    /** Read all entries in order. */
-    def readAll: Iterator[(String, InputStream)]
-  }

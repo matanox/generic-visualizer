@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/CodeInfo.scala >
-
-    val className = target.getClass.getSimpleName.reverse.dropWhile(_ == '$').reverse

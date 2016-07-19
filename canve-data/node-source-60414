@@ -1,8 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/IoHelpers.scala >
-
-    object Collection {
-      def fromText[T: StringSerializable: ClassTag](artifact: FlatArtifact): Producer[Iterable[T]] =
-        fromArtifact(LineCollectionIo.text[T], artifact)
-      def fromJson[T: JsonFormat: ClassTag](artifact: FlatArtifact): Producer[Iterable[T]] =
-        fromArtifact(LineCollectionIo.json[T], artifact)
-    }

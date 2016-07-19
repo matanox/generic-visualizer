@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-  override def read(artifact: FlatArtifact): Iterable[T] =
-    delegate.read(artifact).toList

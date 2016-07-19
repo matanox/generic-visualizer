@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
-
-    def urlToArtifact[A <: Artifact: ClassTag]: PartialFunction[URI, A] =
-      PartialFunction.empty[URI, A]

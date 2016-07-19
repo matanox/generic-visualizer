@@ -1,5 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-    val outputStreams = for (name <- outputNames) yield {
-      (name, StreamIo.read(new FileArtifact(new File(scratchDir, name))))
-    }

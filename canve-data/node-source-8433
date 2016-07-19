@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
-
-trait PersistedProducer[T, A <: Artifact] extends Producer[T] {
-  def original: Producer[T]
-  def io: Serializer[T, A] with Deserializer[T, A]
-  def artifact: A
-}

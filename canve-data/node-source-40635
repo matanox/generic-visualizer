@@ -1,4 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactIo.scala >
-
-  override def write(data: Iterable[T], artifact: FlatArtifact): Unit =
-    delegate.write(data.iterator, artifact)

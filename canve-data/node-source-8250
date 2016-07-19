@@ -1,7 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Artifact.scala >
-
-trait Artifact {
-  /** Return true if this data has been written to the persistent store. */
-  def exists: Boolean
-  def url: URI
-}

@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ExternalProcess.scala >
-
-      override def stepInfo =
-        super.stepInfo.copy(className = "StaticResource")
-          .copy(outputLocation = Some(artifact.url))
-          .addParameters("src" -> artifact.url)

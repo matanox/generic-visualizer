@@ -1,6 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/Producer.scala >
-
-class ProducerWithPersistence[T, A <: Artifact](
-    val original: Producer[T],
-    val io: Serializer[T, A] with Deserializer[T, A],
-    val artifact: A

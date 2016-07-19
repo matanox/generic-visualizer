@@ -1,3 +1,0 @@
-< in file /repos/canve/test-projects/allenAI-pipeline/src/main/scala/org/allenai/pipeline/ArtifactFactory.scala >
-
-        var fn = first.urlToArtifact[A] orElse second.urlToArtifact[A]
