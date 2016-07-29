@@ -5,6 +5,8 @@ var height
 var presentationSVGWidth
 var presentationSVGHeight
 
+fetchData(onDataLoaded)
+
 function windowSizeAdapter() {
   width = window.innerWidth
   height = window.innerHeight
@@ -114,9 +116,6 @@ var svgText   = hiddenSVG.append('svg:text')
                          .style('font-size', sphereFontSize)
 
 var presentationSVG = d3.select('body').append('svg:svg').style('position', 'aboslute').style('z-index', 0)
-
-initForceLayout()
-windowSizeAdapter()
 
 function experimentalFishEyeIntegration() {
   // Note: this feels a little jerky, maybe tweening is required
@@ -350,10 +349,15 @@ function loadEdges(callback){
 
       inputEdges.forEach(function(edge) {
         console.log(edge.id1, edge.id2)
+        if (globalGraph.node(edge.id1) === undefined) throw `invalid input edge refers to undefined node ${edge.id1}`
+        if (globalGraph.node(edge.id2) === undefined) throw `invalid input edge refers to undefined node ${edge.id2}`
+          
         //console.dir(globalGraph.hasNode(edge.id1))
         //console.dir(globalGraph.hasNode(edge.id2))
-        if (globalGraph.setEdge({v:edge.id1, w:edge.id2}) === undefined)
+        console.log(`setting edge ${edge.edgeKind}`)
+        if (globalGraph.setEdge(edge.id1, edge.id2, {v:edge.id1, w:edge.id2, edgeKind:edge.edgeKind}) === undefined)
           console.warn(`input edge (${edge.id1}, ${edge.id2}) failed to initialize as a graphlib edge`)
+        else console.log(globalGraph.edge(edge.id1, edge.id2))
       })
 
       callback()
@@ -409,7 +413,7 @@ function initRadii() {
 
   globalGraph.nodes().forEach(function(nodeId) {
     //if (typeof globalGraph.node(nodeId) !== "undefined") {
-      console.log(nodeId)
+      console.log(`node id: ${nodeId}`)
       console.dir(globalGraph.node(nodeId))
       globalGraph.node(nodeId).collapsedRadius = radiusByEdges(nodeId)
       globalGraph.node(nodeId).radius = globalGraph.node(nodeId).collapsedRadius
@@ -419,7 +423,10 @@ function initRadii() {
 
 function onDataLoaded(callback) {
 
-  console.log('data loading done')
+  console.log('data loading doneeeee')
+
+  initForceLayout()
+  windowSizeAdapter()
 
   //applyGraphFilters()
 
@@ -438,16 +445,18 @@ function onDataLoaded(callback) {
   }
 
   initAwesomplete()
+  //console.log(d3Data.size)
   //fireGraphDisplayFromNode(87570)
   //fireGraphDisplayFromNode(35478)
   //fireGraphDisplayFromNode(8464)
   //fireGraphDisplayFromNode(8250)
 
   //getUnusedTypes(globalGraph).forEach(fireGraphDisplayFromNode)
-  unusedTypes = getUnusedTypes(globalGraph)
-  console.log(unusedTypes.length + ' unused project types detected:')
-  console.log(unusedTypes)
-  fireGraphDisplayFull
+  //unusedTypes = getUnusedTypes(globalGraph)
+  //console.log(unusedTypes.length + ' unused project types detected:')
+  //console.log(unusedTypes)
+  console.log("firing graph display")
+  fireGraphDisplayFull()
   //fireGraphDisplayFromNode(unusedTypes[0])
 }
 
@@ -720,10 +729,8 @@ function debugListSpecialNodes() {
 
 function fetchData(callback) {
   // callback-hell-style flow control for all data loading
-  loadNodes(function(){loadEdges(onDataLoaded)})
+  loadNodes(function(){loadEdges(callback)})
 }
-
-fetchData()
 
 function getNodesByName(searchNodeName, graph) {
   var found = graph.nodes().filter(function(id) {
@@ -945,7 +952,9 @@ function fireGraphDisplayFromNode(nodeId) {
 // compute circle graph
 function fireGraphDisplayFull() {
   
-  globalGraph.forEach(function(id) {
+  console.log("in fire graph display")
+
+  globalGraph.nodes().forEach(function(id) {
     addNodeToDisplay(id)
   })
   
@@ -1057,6 +1066,7 @@ function mapToD3(displayGraph) {
   })
 
   var links = displayGraph.edges().map(function(edge) {
+    console.log(edge)
     return { source: nodeIdIndex[edge.v], // vertex specified as index into nodes array
              target: nodeIdIndex[edge.w], // vertex specified as index into nodes array
              v: edge.v,                   // pass on the graphlib node id
@@ -1331,7 +1341,11 @@ function initForceLayout() {
                          .on("tick", tick)
                          .on("end", function() { console.log('layout stable') })
 
+  window.forceLayout = forceLayout
+
   drag = forceLayout.drag()
+
+  window.drag = drag
 
   drag.on('dragstart', function (d) {
     dragStartMouseCoords = d3.mouse(presentationSVG.node())
@@ -1390,6 +1404,7 @@ function updateForceLayout(displayGraph, removals) {
   // sync the d3 graph data structure from the graphlib one
   //
   d3Data = mapToD3(displayGraph)
+  console.log(d3Data.size)
 
   //
   // the d3 (re)join
@@ -1457,7 +1472,7 @@ function updateForceLayout(displayGraph, removals) {
     .attr("id", function(node) { // for allowing access by index to any node created by d3
       return 'node' + node.id
     })
-    .call(drag)
+    .call(window.drag)
 
     .append("circle")
     .attr("class", "circle")
